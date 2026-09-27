@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Честная цена — конструктор и голосовой помощник · Сбератон 2026</title>
+<style>
+:root{
+  --green:#21A038; --green-dark:#0A7F24; --green-light:#E8F7EB;
+  --black:#0F0F0F; --muted:#667085; --bg:#F5F6F7;
+  --card:#FFF; --line:#E5E7EB;
+  --yellow:#FFF7D6; --yellow-border:#E8CE6B; --yellow-text:#7A5A00;
+  --red:#FFF0ED; --red-border:#F5B8A8; --red-text:#B42318;
+  --blue:#EDF5FF; --blue-border:#B8D4F5; --blue-text:#175CD3;
+  --radius:16px; --radius-sm:12px;
+}
+*{box-sizing:border-box}
+body{margin:0;color:var(--black);background:var(--bg);
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit}
+button{cursor:pointer}
+
+.topbar{padding:12px 5vw;background:#fff;border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:center;gap:16px;
+  position:sticky;top:0;z-index:100;flex-wrap:wrap}
+.brand{display:flex;gap:10px;align-items:center;font-weight:800;font-size:15px}
+.brand-mark{width:32px;height:32px;border-radius:9px;background:var(--green);
+  color:#fff;display:grid;place-items:center;font-weight:900;font-size:16px}
+.badges{display:flex;gap:8px;flex-wrap:wrap}
+.demo-label{font-size:12px;color:var(--yellow-text);background:var(--yellow);
+  padding:6px 12px;border-radius:999px;font-weight:700;border:1px solid var(--yellow-border)}
+
+.roles{display:flex;gap:8px;padding:14px 5vw 0;flex-wrap:wrap}
+.role-btn{background:#fff;border:1px solid var(--line);border-radius:999px;
+  padding:9px 18px;font-weight:700;font-size:14px;color:var(--muted);transition:.15s}
+.role-btn.active{background:var(--green);color:#fff;border-color:var(--green)}
+.role-btn:hover:not(.active){border-color:var(--green);color:var(--green-dark)}
+
+.container{width:min(1240px,92vw);margin:0 auto}
+.workspace{display:grid;grid-template-columns:400px 1fr;gap:20px;
+  padding:18px 0 48px;align-items:start}
+@media(max-width:980px){.workspace{grid-template-columns:1fr}}
+
+/* CHAT */
+.chat{background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:0 12px 32px rgba(16,24,40,.06);overflow:hidden;position:sticky;top:76px}
+.chat-header{padding:13px 16px;background:#0F1114;color:#fff;
+  display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700}
+.chat-header .dot{width:8px;height:8px;border-radius:50%;background:#21A038;
+  box-shadow:0 0 0 3px rgba(33,160,56,.25)}
+.chat-header .voice-state{margin-left:auto;font-size:12px;font-weight:600;color:#8A93A0}
+.chat-messages{padding:16px;height:380px;overflow-y:auto;
+  display:flex;flex-direction:column;gap:10px}
+.msg{max-width:88%;padding:10px 13px;border-radius:14px;font-size:14px;
+  line-height:1.5;animation:fadeIn .25s ease;white-space:pre-line}
+.msg.user{align-self:flex-end;background:var(--green);color:#fff;
+  border-bottom-right-radius:4px}
+.msg.ai{align-self:flex-start;background:#F2F4F7;color:var(--black);
+  border-bottom-left-radius:4px}
+.msg.system{align-self:center;background:var(--yellow);color:var(--yellow-text);
+  font-size:12.5px;font-weight:600;text-align:center;max-width:100%;
+  border:1px solid var(--yellow-border)}
+.msg b{font-weight:800}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.typing{display:inline-flex;gap:3px;align-items:center;padding:6px 2px}
+.typing span{width:6px;height:6px;border-radius:50%;background:#A0A7B0;
+  animation:bounce 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.5}
+  30%{transform:translateY(-4px);opacity:1}}
+
+.chat-input-wrap{display:flex;gap:8px;padding:12px 14px;
+  border-top:1px solid var(--line);background:#FAFBFC;align-items:center}
+.chat-input-wrap input{flex:1;border:1px solid var(--line);border-radius:10px;
+  padding:11px 13px;outline:none;font-size:14px}
+.chat-input-wrap input:focus{border-color:var(--green);
+  box-shadow:0 0 0 3px rgba(33,160,56,.15)}
+.btn-send{background:var(--green);color:#fff;border:0;
+  border-radius:10px;padding:11px 16px;font-weight:700;font-size:14px}
+.btn-send:hover{background:var(--green-dark)}
+.btn-mic{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);
+  background:#fff;font-size:18px;display:grid;place-items:center;transition:.15s}
+.btn-mic:hover{border-color:var(--green)}
+.btn-mic.rec{background:var(--red);border-color:var(--red-border);
+  animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(180,35,24,.3)}
+  50%{box-shadow:0 0 0 8px rgba(180,35,24,0)}}
+.btn-tts{background:none;border:0;font-size:16px;opacity:.6}
+.btn-tts.on{opacity:1}
+.chat-examples{padding:10px 14px 14px;background:#FAFBFC;
+  display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+.chat-examples button{background:#fff;border:1px solid var(--line);
+  border-radius:999px;padding:6px 12px;font-size:12.5px;color:var(--black);
+  font-weight:600;transition:.15s}
+.chat-examples button:hover{border-color:var(--green);color:var(--green-dark)}
+
+/* PANELS */
+.panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:24px;box-shadow:0 8px 24px rgba(16,24,40,.04)}
+.panel h2{font-size:22px;margin:0 0 4px;letter-spacing:-.02em;font-weight:800}
+.panel .sub{color:var(--muted);font-size:13.5px;margin:0 0 18px}
+.hidden{display:none!important}
+
+.ctl{margin:16px 0}
+.ctl label{display:flex;justify-content:space-between;font-size:13.5px;
+  font-weight:700;margin-bottom:6px}
+.ctl label output{color:var(--green-dark);font-weight:800}
+input[type=range]{width:100%;accent-color:var(--green);height:28px}
+
+.toggles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+@media(max-width:640px){.toggles{grid-template-columns:1fr}}
+.opt{border:1px solid var(--line);border-radius:var(--radius-sm);padding:12px 14px;
+  display:flex;gap:10px;align-items:flex-start;cursor:pointer;transition:.15s;background:#fff}
+.opt:hover{border-color:var(--green)}
+.opt.on{border-color:var(--green);background:var(--green-light)}
+.opt input{margin-top:3px;accent-color:var(--green)}
+.opt .t{font-weight:700;font-size:14px}
+.opt .d{font-size:12.5px;color:var(--muted);margin-top:2px}
+.opt .price{margin-left:auto;font-weight:800;font-size:13px;white-space:nowrap;
+  color:var(--green-dark)}
+.opt.removed{opacity:.45;background:#FAFAFA}
+.opt.removed .price{color:var(--red-text);text-decoration:line-through}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}
+@media(max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--green-light);border:1px solid #CDEBD3;border-radius:var(--radius-sm);
+  padding:12px 14px}
+.kpi .v{font-size:21px;font-weight:800;letter-spacing:-.02em}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:2px;font-weight:600}
+.kpi.neutral{background:#F8F9FA;border-color:var(--line)}
+.kpi.warn{background:var(--yellow);border-color:var(--yellow-border)}
+
+.breakdown{margin:14px 0;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden}
+.breakdown .row{display:flex;align-items:center;gap:10px;padding:10px 14px;
+  font-size:14px;border-bottom:1px solid var(--line);background:#fff}
+.breakdown .row:last-child{border-bottom:0}
+.breakdown .row.total{background:#0F1114;color:#fff;font-weight:800}
+.breakdown .row .name{flex:1}
+.breakdown .row .name small{display:block;color:var(--muted);font-size:12px}
+.breakdown .row.total .name small{color:#9AA3AF}
+.breakdown .row .sum{font-weight:700;white-space:nowrap}
+.breakdown .row .rm{border:1px solid var(--line);background:#fff;border-radius:8px;
+  padding:3px 9px;font-size:12px;color:var(--red-text);font-weight:700}
+.breakdown .row .rm:hover{background:var(--red)}
+.breakdown .row.removed .name,.breakdown .row.removed .sum{
+  text-decoration:line-through;opacity:.45}
+.verdict{margin:14px 0;padding:14px 16px;border-radius:var(--radius-sm);
+  font-size:14px;font-weight:600}
+.verdict.good{background:var(--green-light);border:1px solid #CDEBD3;color:#0A5C22}
+.verdict.warn{background:var(--yellow);border:1px solid var(--yellow-border);color:var(--yellow-text)}
+.verdict.bad{background:var(--red);border:1px solid var(--red-border);color:var(--red-text)}
+.verdict small{display:block;font-weight:500;margin-top:4px;opacity:.85}
+
+/* RKO table */
+.rko-table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+.rko-table th,.rko-table td{padding:9px 10px;border:1px solid var(--line);text-align:right}
+.rko-table th:first-child,.rko-table td:first-child{text-align:left}
+.rko-table th{background:#F8F9FA;font-size:12.5px}
+.rko-table tr.best td{background:var(--green-light);font-weight:700}
+.rko-table tr.best td:first-child::after{content:" ← рекомендуем";
+  color:var(--green-dark);font-weight:800;font-size:12px}
+.rko-table .min{color:var(--green-dark);font-weight:800}
+
+/* KM */
+.km-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+@media(max-width:760px){.km-grid{grid-template-columns:1fr}}
+.transcript{background:#0F1114;color:#D6DAE0;border-radius:var(--radius-sm);
+  padding:16px;height:300px;overflow-y:auto;font-size:13px;line-height:1.55}
+.transcript .tline{margin-bottom:8px;animation:fadeIn .3s ease}
+.transcript .who{color:#75DC87;font-weight:700}
+.transcript .who.client{color:#8EC5FF}
+.fact{background:#F8F9FA;border:1px solid var(--line);border-radius:10px;
+  padding:10px 12px;margin-bottom:8px;font-size:13px}
+.fact .k{font-size:11px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.04em;font-weight:700}
+.fact .v{font-weight:700;margin-top:2px}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;
+  border-radius:999px;margin-left:8px;vertical-align:middle}
+.tag.src{background:var(--blue);color:var(--blue-text);border:1px solid var(--blue-border)}
+.tag.est{background:var(--yellow);color:var(--yellow-text);border:1px solid var(--yellow-border)}
+.tag.unk{background:var(--red);color:var(--red-text);border:1px solid var(--red-border)}
+
+.btn{background:var(--green);color:#fff;border:0;border-radius:10px;
+  padding:11px 18px;font-weight:700;font-size:14px}
+.btn:hover{background:var(--green-dark)}
+.btn.ghost{background:#fff;color:var(--black);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--green);color:var(--green-dark)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+
+/* Passport modal */
+.modal-back{position:fixed;inset:0;background:rgba(15,17,20,.55);
+  display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+.modal-back.open{display:flex}
+.modal{background:#fff;border-radius:var(--radius);max-width:720px;width:100%;
+  max-height:88vh;overflow-y:auto;padding:26px;animation:fadeIn .25s ease}
+.modal h3{margin:0 0 2px;font-size:20px;font-weight:800}
+.modal .meta{font-size:12px;color:var(--muted);margin-bottom:16px}
+.pp-sec{margin:12px 0;padding:12px 14px;border:1px solid var(--line);
+  border-radius:var(--radius-sm);font-size:13.5px}
+.pp-sec .h{font-weight:800;font-size:12px;text-transform:uppercase;
+  letter-spacing:.04em;color:var(--muted);margin-bottom:6px}
+.pp-sec ul{margin:4px 0 0;padding-left:18px}
+.footnote{font-size:12px;color:var(--muted);margin-top:18px;
+  border-top:1px solid var(--line);padding-top:12px}
+
+/* TEAM + PRODUCT TABS */
+.team{display:flex;align-items:center;gap:10px}
+.team-logo{height:56px;width:auto;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15))}
+.team-name{font-size:12.5px;font-weight:800;color:var(--black);line-height:1.25}
+.team-name small{display:block;font-weight:600;color:var(--muted);font-size:11px}
+.prod-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 18px}
+.prod-tab{background:#fff;border:1px solid var(--line);border-radius:10px;
+  padding:8px 14px;font-weight:700;font-size:13px;color:var(--muted);transition:.15s}
+.prod-tab.active{background:#0F1114;color:#fff;border-color:#0F1114}
+.prod-tab:hover:not(.active){border-color:var(--green);color:var(--green-dark)}
+.unit-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+@media(max-width:760px){.unit-cards{grid-template-columns:1fr}}
+.unit-card{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;
+  background:#fff;position:relative;transition:.15s}
+.unit-card.best{border-color:var(--green);box-shadow:0 0 0 3px rgba(33,160,56,.15)}
+.unit-card .nm{font-weight:800;font-size:15px;margin-bottom:2px}
+.unit-card .pr{font-size:22px;font-weight:900;margin:6px 0}
+.unit-card .pr small{font-size:12px;font-weight:600;color:var(--muted)}
+.unit-card ul{margin:8px 0 0;padding-left:18px;font-size:12.5px;color:var(--muted);
+  display:flex;flex-direction:column;gap:3px}
+.unit-card .ribbon{position:absolute;top:-9px;right:12px;background:var(--green);
+  color:#fff;font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px}
+.seg{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 14px}
+.seg button{background:#fff;border:1px solid var(--line);border-radius:999px;
+  padding:7px 14px;font-weight:700;font-size:13px;color:var(--muted)}
+.seg button.active{background:var(--green);color:#fff;border-color:var(--green)}
+</style>
+<base target="_blank">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><div class="brand-mark">₽</div>
+    <div>Честная цена<span style="color:var(--muted);font-weight:600"> · конструктор и голосовой помощник</span></div>
+  </div>
+  <div class="team">
+    <img class="team-logo" src="data:image/png;base64,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" alt="Люмен">
+    <div class="team-name">Команда «Люмен»<small>Курск · Сбератон 2026</small></div>
+  </div>
+  <div class="badges">
+    <span class="demo-label">Сбератон 2026 · Демо</span>
+    <span class="demo-label">РКО — открытые данные 27.09.2026 · Здоровье/Право — презентации ККСБ 2026 · CRM — sbercrm.com · Кредит — иллюстративная модель</span>
+  </div>
+</div>
+
+<div class="roles" id="roles">
+  <button class="role-btn active" data-role="person">🧑 Я — частный клиент</button>
+  <button class="role-btn" data-role="business">🏢 Я — бизнес</button>
+  <button class="role-btn" data-role="km">👔 Я — клиентский менеджер</button>
+</div>
+
+<div class="container">
+<div class="workspace">
+
+  <!-- CHAT -->
+  <div class="chat">
+    <div class="chat-header"><span class="dot"></span>
+      <span id="chatTitle">Голосовой помощник</span>
+      <span class="voice-state" id="voiceState"></span>
+    </div>
+    <div class="chat-messages" id="messages"></div>
+    <div class="chat-input-wrap">
+      <button class="btn-mic" id="micBtn" title="Говорите">🎤</button>
+      <input id="chatInput" placeholder="Или напишите…" autocomplete="off"/>
+      <button class="btn-tts on" id="ttsBtn" title="Озвучивать ответы">🔊</button>
+      <button class="btn-send" id="sendBtn">➤</button>
+    </div>
+    <div class="chat-examples" id="examples"></div>
+  </div>
+
+  <!-- PERSON: CREDIT CONSTRUCTOR -->
+  <div class="panel" id="panel-person">
+    <h2>Кредит наличными — соберите свою цену</h2>
+    <p class="sub">Цена состоит из понятных частей. Убирайте то, что вам не нужно, — и смотрите, как меняется платёж. Иллюстративная модель: итоговые условия банк подтверждает по заявке.</p>
+
+    <div class="ctl">
+      <label>Сумма кредита <output id="oAmount">1 500 000 ₽</output></label>
+      <input type="range" id="inAmount" min="100000" max="5000000" step="50000" value="1500000">
+    </div>
+    <div class="ctl">
+      <label>Срок <output id="oTerm">36 мес.</output></label>
+      <input type="range" id="inTerm" min="12" max="60" step="6" value="36">
+    </div>
+
+    <div class="toggles">
+      <label class="opt on" id="optSalary">
+        <input type="checkbox" id="inSalary" checked>
+        <div><div class="t">Получаю зарплату / пенсию в Сбере</div>
+        <div class="d">Скидка к ставке −2 п.п. (условие с sberbank.ru)</div></div>
+        <div class="price">−2 п.п.</div>
+      </label>
+      <label class="opt on" id="optIns">
+        <input type="checkbox" id="inIns" checked>
+        <div><div class="t">Страхование жизни и здоровья</div>
+        <div class="d">Добровольно. Снижает ставку на −3 п.п., полис ≈ 2,4% от суммы в год (иллюстрация)</div></div>
+        <div class="price" id="insPrice">—</div>
+      </label>
+      <label class="opt on" id="optSms">
+        <input type="checkbox" id="inSms" checked>
+        <div><div class="t">SMS-информирование</div>
+        <div class="d">Можно выключить — уведомления останутся в приложении</div></div>
+        <div class="price">59 ₽/мес</div>
+      </label>
+      <label class="opt" id="optNone">
+        <input type="checkbox" id="inNothing">
+        <div><div class="t">Мне ничего дополнительно не нужно</div>
+        <div class="d">Один клик — и остаётся только сам кредит</div></div>
+        <div class="price">0 ₽</div>
+      </label>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="v" id="kRate">—</div><div class="l">Ставка, % годовых</div></div>
+      <div class="kpi"><div class="v" id="kPay">—</div><div class="l">Платёж по кредиту / мес</div></div>
+      <div class="kpi neutral"><div class="v" id="kTotal">—</div><div class="l">Итого в месяц со всеми опциями</div></div>
+      <div class="kpi warn"><div class="v" id="kOver">—</div><div class="l">Переплата за весь срок</div></div>
+    </div>
+
+    <div class="breakdown" id="breakdown"></div>
+    <div class="verdict good" id="verdict"></div>
+
+    <div class="actions">
+      <button class="btn" id="btnPassport">📄 Паспорт цены</button>
+      <button class="btn ghost" id="btnExplain">❓ Объясните, что это за продукт</button>
+    </div>
+    <div class="footnote">Модель для демонстрации: базовая ставка 29,9% выбрана внутри публичного диапазона ПСК 24,9–44,8%; скидка зарплатным клиентам −2 п.п. — с официальной страницы продукта. Это не предложение банка и не заменяет расчёт по заявке.</div>
+  </div>
+
+  <!-- BUSINESS: ПРОДУКТЫ ЭКОСИСТЕМЫ -->
+  <div class="panel hidden" id="panel-business">
+    <h2>Бизнесу: честная цена на продукты экосистемы</h2>
+    <p class="sub">Один стандарт для любого продукта: состав цены открыт, полная стоимость считается под ваш профиль, всё лишнее убирается. Выберите продукт — механика везде одинаковая.</p>
+
+    <div class="prod-tabs" id="prodTabs">
+      <button class="prod-tab active" data-prod="rko">💳 РКО</button>
+      <button class="prod-tab" data-prod="cowork">🤖 GigaCowork</button>
+      <button class="prod-tab" data-prod="health">🩺 СберЗдоровье</button>
+      <button class="prod-tab" data-prod="legal">⚖️ СберПраво</button>
+      <button class="prod-tab" data-prod="crm">📊 SberCRM</button>
+      <button class="prod-tab" data-prod="rpa">⚙️ ГигаАРПА</button>
+    </div>
+
+    <!-- РКО -->
+    <div class="prod" id="prod-rko">
+    <h2 style="font-size:18px">РКО — какой пакет дешевле при ваших операциях</h2>
+    <p class="sub">Нулевая абонплата — не значит нулевые расходы. Двигайте ползунки под свой месяц — увидите цену каждого пакета и порог, где выгоднее другой. Тарифы: открытые данные СберБизнеса на 27.09.2026, упрощены для демо.</p>
+
+    <div class="toggles" style="grid-template-columns:1fr">
+      <label class="opt" id="optIP">
+        <input type="checkbox" id="inIP">
+        <div><div class="t">Я — индивидуальный предприниматель</div>
+        <div class="d">Открывает пакет «Только для ИП»</div></div>
+      </label>
+    </div>
+    <div class="ctl">
+      <label>Платежей юрлицам/ИП в другие банки, в месяц <output id="oPay">30</output></label>
+      <input type="range" id="inPay" min="0" max="100" step="1" value="30">
+    </div>
+    <div class="ctl">
+      <label>Переводы физлицам, ₽ в месяц <output id="oFL">200 000 ₽</output></label>
+      <input type="range" id="inFL" min="0" max="2000000" step="50000" value="200000">
+    </div>
+    <div class="ctl">
+      <label>Снятие наличных с бизнес-карты, ₽ в месяц <output id="oCash">0 ₽</output></label>
+      <input type="range" id="inCash" min="0" max="1000000" step="50000" value="0">
+    </div>
+
+    <table class="rko-table" id="rkoTable"></table>
+    <div class="verdict good" id="rkoVerdict"></div>
+
+    <div class="actions">
+      <button class="btn" id="btnPassport2">📄 Паспорт цены</button>
+      <button class="btn ghost" id="btnExplain2">❓ Объясните разницу пакетов</button>
+    </div>
+    <div class="footnote">Учтены: абонплата, платежи юрлицам/ИП в другие банки, переводы физлицам, снятие наличных с бизнес-карты. Не учтены: валютные операции, внесение наличных, акции и региональные особенности — полный расчёт делает менеджер по официальному тарифному справочнику.</div>
+    </div>
+
+    <!-- GigaCowork -->
+    <div class="prod hidden" id="prod-cowork">
+    <h2 style="font-size:18px">GigaCowork — корпоративный ИИ-ассистент: версия и цена на виду</h2>
+    <p class="sub">Три версии поставки — под разные требования к данным. Цена зависит от числа пользователей, а не «от аппетита продавца»: соберите конфигурацию и увидите, как меняется стоимость места.</p>
+
+    <div class="seg" id="coworkSeg">
+      <button data-v="cloud" class="active">☁️ Облако</button>
+      <button data-v="hybrid">🔀 Гибрид</button>
+      <button data-v="onprem">🏢 Локально</button>
+    </div>
+    <div class="ctl">
+      <label>Пользователей <output id="oCwUsers">200</output></label>
+      <input type="range" id="inCwUsers" min="100" max="1000" step="50" value="200">
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="v" id="kCwTotal">—</div><div class="l">Стоимость в год</div></div>
+      <div class="kpi"><div class="v" id="kCwSeat">—</div><div class="l">Цена пользователя в месяц</div></div>
+      <div class="kpi neutral"><div class="v" id="kCwVers">—</div><div class="l">Версия поставки</div></div>
+    </div>
+    <div class="breakdown" id="cwBreak"></div>
+    <div class="verdict good" id="cwVerdict"></div>
+
+    <div class="actions">
+      <button class="btn" id="btnPassportCw">📄 Паспорт цены</button>
+      <button class="btn ghost" id="btnExplainCw">❓ Чем версии отличаются</button>
+    </div>
+    <div class="footnote">Вводные команды: облако — от 2,5 млн ₽/год без НДС до 200 пользователей <span class="tag est">оценка, актуальность подтверждает владелец продукта</span>. Локальная поставка считается индивидуально — мы честно показываем «неизвестно», а не рисуем цифру.</div>
+    </div>
+
+    <!-- СберЗдоровье -->
+    <div class="prod hidden" id="prod-health">
+    <h2 style="font-size:18px">СберЗдоровье «Корпоративное здоровье+» — цена за сотрудника прозрачно</h2>
+    <p class="sub">Телемедицина, приёмы в клиниках, анализы и диагностика для сотрудников и их семей. Цена за человека падает с ростом штата — ползунок показывает это честно. Программа действует 1 год после 100% предоплаты.</p>
+
+    <div class="ctl">
+      <label>Сотрудников в программе <output id="oHlStaff">50</output></label>
+      <input type="range" id="inHlStaff" min="3" max="2000" step="1" value="50">
+    </div>
+    <div class="toggles">
+      <label class="opt on" id="optHlAn">
+        <input type="checkbox" id="inHlAn" checked>
+        <div><div class="t">Нужны анализы и инструментальная диагностика</div>
+        <div class="d">Доступно начиная с тарифа «Стандарт»</div></div>
+      </label>
+      <label class="opt" id="optHlUn">
+        <input type="checkbox" id="inHlUn">
+        <div><div class="t">Нужны безлимитные приёмы в клиниках</div>
+        <div class="d">Тариф «Премиум» и выше + выезд врача на дом</div></div>
+      </label>
+    </div>
+
+    <table class="rko-table" id="hlTable"></table>
+    <div class="verdict good" id="hlVerdict"></div>
+
+    <div class="actions">
+      <button class="btn" id="btnPassportHl">📄 Паспорт цены</button>
+      <button class="btn ghost" id="btnExplainHl">❓ Что входит в тарифы</button>
+    </div>
+    <div class="footnote">Цены за сотрудника в год — из презентации «СберЗдоровье. Корпоративное здоровье+» (ККСБ, 2026) <span class="tag src">материалы продукта</span>. Семейный доступ: владелец + 1 взрослый и 3 ребёнка. Детская программа — от 50 000 ₽, зависит от тарифа и числа доступов.</div>
+    </div>
+
+    <!-- СберПраво -->
+    <div class="prod hidden" id="prod-legal">
+    <h2 style="font-size:18px">СберПраво для бизнеса — сколько стоит одна услуга на самом деле</h2>
+    <p class="sub">Юридическое сопровождение пакетом. Делим цену пакета на состав — и видна честная стоимость одного договора, одной проверки контрагента. Сравните с разовыми услугами юристов.</p>
+
+    <div class="ctl">
+      <label>Договоров требуется в год <output id="oLgDocs">15</output></label>
+      <input type="range" id="inLgDocs" min="5" max="40" step="1" value="15">
+    </div>
+
+    <div class="unit-cards" id="lgCards"></div>
+    <div class="verdict good" id="lgVerdict"></div>
+
+    <div class="actions">
+      <button class="btn" id="btnPassportLg">📄 Паспорт цены</button>
+      <button class="btn ghost" id="btnExplainLg">❓ Чем «Бизнес+» отличается</button>
+    </div>
+    <div class="footnote">Состав и цены пакетов — из презентации «СберПраво. Юридическое сопровождение» (04.2026) <span class="tag src">материалы продукта</span>. Есть и пакеты для сотрудников компании — отдельная линейка.</div>
+    </div>
+
+    <!-- SberCRM -->
+    <div class="prod hidden" id="prod-crm">
+    <h2 style="font-size:18px">SberCRM — от 0 ₽, платите только за людей</h2>
+    <p class="sub">CRM для продаж: сделки, задачи, телефония, маркетинг. Цена — число пользователей × тариф. Бесплатный тариф честно показан рядом: возможно, он вам и нужен.</p>
+
+    <div class="ctl">
+      <label>Пользователей CRM <output id="oCrmUsers">10</output></label>
+      <input type="range" id="inCrmUsers" min="1" max="60" step="1" value="10">
+    </div>
+    <div class="toggles" style="grid-template-columns:1fr">
+      <label class="opt on" id="optCrmYear">
+        <input type="checkbox" id="inCrmYear" checked>
+        <div><div class="t">Оплата сразу за 12 месяцев</div>
+        <div class="d">Скидка за длинный период — цена за месяц ниже</div></div>
+      </label>
+    </div>
+
+    <table class="rko-table" id="crmTable"></table>
+    <div class="verdict good" id="crmVerdict"></div>
+
+    <div class="actions">
+      <button class="btn" id="btnPassportCrm">📄 Паспорт цены</button>
+      <button class="btn ghost" id="btnExplainCrm">❓ Что входит в тарифы</button>
+    </div>
+    <div class="footnote">Тарифы «Управление продажами» — sbercrm.com/pricing <span class="tag src">открытые данные</span>: Базовый — 0 ₽ (до 3–5 пользователей), Расширенный — 500 ₽, Профессиональный — 1 000 ₽ за пользователя в месяц; при оплате за 12 месяцев цена ниже. Упрощено для демо.</div>
+    </div>
+
+    <!-- ГигаАРПА -->
+    <div class="prod hidden" id="prod-rpa">
+    <h2 style="font-size:18px">ГигаАРПА — роботизация процессов: цена и окупаемость до старта</h2>
+    <p class="sub">Программные роботы забирают рутинные операции. Здесь честно две вещи: «от какой суммы» и «когда окупится» — до того, как вы что-то подписали.</p>
+
+    <div class="ctl">
+      <label>Часов рутинных операций в месяц <output id="oRpaHours">100</output></label>
+      <input type="range" id="inRpaHours" min="20" max="500" step="10" value="100">
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="v">от 550 000 ₽</div><div class="l">Проект роботизации</div></div>
+      <div class="kpi"><div class="v" id="kRpaSave">—</div><div class="l">Высвобождение в год</div></div>
+      <div class="kpi warn"><div class="v" id="kRpaPayback">—</div><div class="l">Окупаемость, мес</div></div>
+    </div>
+    <div class="verdict good" id="rpaVerdict"></div>
+
+    <div class="actions">
+      <button class="btn" id="btnPassportRpa">📄 Паспорт цены</button>
+      <button class="btn ghost" id="btnExplainRpa">❓ Реальный кейс</button>
+    </div>
+    <div class="footnote">«От 550 000 ₽» — из презентации «СберСервис. ГигаАРПА» <span class="tag src">материалы продукта</span>. Оценка окупаемости — модель: стоимость часа рутины принята 800 ₽ <span class="tag est">оценка</span>. Точная цена зависит от процесса — считается после аудита <span class="tag unk">неизвестно до аудита</span>.</div>
+    </div>
+
+  </div>
+
+  <!-- KM: MEETING ASSISTANT -->
+  <div class="panel hidden" id="panel-km">
+    <h2>Ассистент встречи — из записи в предложение</h2>
+    <p class="sub">Менеджер ведёт встречу — система слушает запись, собирает профиль клиента и готовит черновик предложения. Демо: реальная расшифровка встречи с агрокомпанией, 26.08.2026 (анонимизирована).</p>
+
+    <div class="actions" style="margin-top:0">
+      <button class="btn" id="btnAnalyze">▶ Анализировать запись встречи</button>
+      <button class="btn ghost" id="btnKmReset">↺ Сбросить</button>
+    </div>
+
+    <div class="km-grid" style="margin-top:16px">
+      <div>
+        <div class="transcript" id="transcript"><div style="color:#8A93A0">Здесь появится запись встречи…</div></div>
+      </div>
+      <div>
+        <div id="kmFacts"></div>
+        <div id="kmOffer"></div>
+      </div>
+    </div>
+    <div class="footnote">Цены GigaCowork — вводные команды (облако от 2,5 млн ₽/год без НДС), актуальность подтверждает владелец продукта. Черновик предложения всегда проверяет менеджер — система не отправляет его клиенту сама.</div>
+  </div>
+
+</div>
+</div>
+
+<!-- PASSPORT MODAL -->
+<div class="modal-back" id="modalBack">
+  <div class="modal">
+    <h3>📄 Паспорт цены</h3>
+    <div class="meta" id="ppMeta"></div>
+    <div id="ppBody"></div>
+    <div class="actions">
+      <button class="btn" id="btnPrint">🖨 Сохранить / печать</button>
+      <button class="btn ghost" id="btnClose">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   ЧЕСТНАЯ ЦЕНА v3 — конструктор цены + голосовой помощник
+   Полностью офлайн: Web Speech API + локальные расчёты.
+   AI извлекает параметры из речи; тарифы и формулы — только
+   детерминированные правила, модель их не придумывает.
+   ============================================================ */
+
+// ---------- helpers ----------
+const $ = id => document.getElementById(id);
+const fmt = v => new Intl.NumberFormat("ru-RU",{maximumFractionDigits:0}).format(Math.round(v)) + " ₽";
+const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
+let TTS_ON = true;
+
+// ---------- русские числительные -> число ----------
+const NUM_WORDS = {
+  "ноль":0,"один":1,"одна":1,"одну":1,"два":2,"две":2,"три":3,"четыре":4,"пять":5,
+  "шесть":6,"семь":7,"восемь":8,"девять":9,"десять":10,"одиннадцать":11,"двенадцать":12,
+  "тринадцать":13,"четырнадцать":14,"пятнадцать":15,"шестнадцать":16,"семнадцать":17,
+  "восемнадцать":18,"девятнадцать":19,"двадцать":20,"тридцать":30,"сорок":40,
+  "пятьдесят":50,"шестьдесят":60,"семьдесят":70,"восемьдесят":80,"девяносто":90,
+  "сто":100,"двести":200,"триста":300,"четыреста":400,"пятьсот":500,"шестьсот":600,
+  "семьсот":700,"восемьсот":800,"девятьсот":900,
+  "полтора":1.5,"полторы":1.5,"пол":0.5,
+  // косвенные падежи: «двадцати договоров», «со ста пользователями»
+  "одного":1,"одной":1,"двух":2,"трёх":3,"трех":3,"четырёх":4,"четырех":4,
+  "пяти":5,"шести":6,"семи":7,"восьми":8,"девяти":9,"десяти":10,
+  "одиннадцати":11,"двенадцати":12,"тринадцати":13,"четырнадцати":14,"пятнадцати":15,
+  "шестнадцати":16,"семнадцати":17,"восемнадцати":18,"девятнадцати":19,
+  "двадцати":20,"тридцати":30,"сорока":40,"пятидесяти":50,"шестидесяти":60,
+  "семидесяти":70,"восьмидесяти":80,"девяноста":90,"ста":100,
+  "двухсот":200,"трёхсот":300,"трехсот":300,"четырёхсот":400,"четырехсот":400,
+  "пятисот":500,"шестисот":600,"семисот":700,"восьмисот":800,"девятисот":900
+};
+// Возвращает массив числовых групп из текста: [{value, idx}]
+// "полтора миллиона на три года" -> [{value:1500000}, {value:3}]
+function parseRuNumbers(text){
+  const t = text.toLowerCase();
+  const out = [];
+  // 1) цифры с множителем: 1 500 000 / 2,5 млн / 300 тыс
+  const reD = /(\d[\d\s]*(?:[.,]\d+)?)\s*(млн|миллион[аов]*|тыс\.?|тысяч[аи]?)/g;
+  let m, used = [];
+  while ((m = reD.exec(t))){
+    const base = parseFloat(m[1].replace(/\s/g,"").replace(",","."));
+    if (!isNaN(base) && base > 0){
+      out.push({ value: base * (/млн|миллион/.test(m[2]) ? 1e6 : 1e3), idx: m.index });
+      used.push([m.index, m.index + m[0].length]);
+    }
+  }
+  // 2) слова: классический алгоритм total/cur
+  // "миллион двести тысяч" = 1 000 000 + 200 000; "тысяч двести" = 1200
+  const tokens = t.split(/([^а-яё\d]+)/);
+  let pos = 0, cur = 0, total = 0, runIdx = -1, hasNum = false;
+  const flush = () => {
+    const v = total + cur;
+    if (hasNum && v > 0) out.push({ value: v, idx: runIdx });
+    cur = 0; total = 0; runIdx = -1; hasNum = false;
+  };
+  for (const tok of tokens){
+    const start = pos; pos += tok.length;
+    if (!tok.trim()) continue;
+    const w = tok.trim();
+    const isNumW = NUM_WORDS[w] !== undefined;
+    const isMult = /^(миллион|млн|тысяч|тыс)/.test(w);
+    const inUsed = used.some(([a,b]) => start >= a && start < b);
+    if (isNumW && !inUsed){
+      if (runIdx < 0) runIdx = start;
+      cur += NUM_WORDS[w]; hasNum = true;
+    } else if (isMult && !inUsed){
+      if (runIdx < 0) runIdx = start;
+      const M = /^миллион|^млн/.test(w) ? 1e6 : 1e3;
+      cur = (cur || 1) * M;   // "тысяч двести": cur=1000; "двести тысяч": 200*1000
+      total += cur; cur = 0; hasNum = true;
+    } else if (/^\d[\d\s]*$/.test(w) && !inUsed){
+      // голые цифры без множителя
+      const n = parseFloat(w.replace(/\s/g,""));
+      if (!isNaN(n) && n > 0) out.push({ value: n, idx: start });
+      flush();
+    } else flush();
+  }
+  flush();
+  return out;
+}
+function parseRuNumber(text){
+  const arr = parseRuNumbers(text);
+  if (!arr.length) return null;
+  return arr.reduce((a,b) => b.value > a.value ? b : a).value;
+}
+// число (словами или цифрами), за которым идёт год/года/лет
+function parseYears(text){
+  const t = text.toLowerCase();
+  let m = t.match(/(\d+(?:[.,]\d+)?)\s*(года?|лет)/);
+  if (m) return parseFloat(m[1].replace(",","."));
+  m = t.match(/([а-яё\s]{2,40}?)\s*(года?|лет)(?![а-яё])/);
+  if (m){
+    const arr = parseRuNumbers(m[1]);
+    if (arr.length) return arr[arr.length-1].value;
+  }
+  return null;
+}
+
+// ---------- voice ----------
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recog = null, listening = false;
+if (SR){
+  recog = new SR();
+  recog.lang = "ru-RU";
+  recog.interimResults = false;
+  recog.maxAlternatives = 1;
+  recog.onresult = e => {
+    const text = e.results[0][0].transcript;
+    $("chatInput").value = text;
+    sendMessage();
+  };
+  recog.onend = () => { listening = false; $("micBtn").classList.remove("rec"); $("voiceState").textContent = ""; };
+  recog.onerror = () => { listening = false; $("micBtn").classList.remove("rec");
+    $("voiceState").textContent = "микрофон недоступен — пишите текстом"; };
+} else {
+  $("voiceState").textContent = "голос не поддерживается — пишите текстом";
+}
+$("micBtn").onclick = () => {
+  if (!recog) { addMsg("system","В этом браузере нет распознавания речи — используйте текстовый ввод."); return; }
+  if (listening){ recog.stop(); return; }
+  try{
+    recog.start(); listening = true;
+    $("micBtn").classList.add("rec");
+    $("voiceState").textContent = "слушаю…";
+  }catch(e){}
+};
+function speak(text){
+  if (!TTS_ON || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text.replace(/[₽•]/g," ").slice(0, 600));
+  u.lang = "ru-RU"; u.rate = 1.05;
+  window.speechSynthesis.speak(u);
+}
+$("ttsBtn").onclick = () => { TTS_ON = !TTS_ON; $("ttsBtn").classList.toggle("on", TTS_ON);
+  if (!TTS_ON && window.speechSynthesis) window.speechSynthesis.cancel(); };
+
+// ---------- chat core ----------
+function addMsg(type, html){
+  const d = document.createElement("div");
+  d.className = "msg " + type;
+  d.innerHTML = html;
+  $("messages").appendChild(d);
+  $("messages").scrollTop = $("messages").scrollHeight;
+}
+function aiSay(html, spoken){
+  const t = document.createElement("div");
+  t.className = "msg ai";
+  t.innerHTML = '<span class="typing"><span></span><span></span><span></span></span>';
+  $("messages").appendChild(t);
+  $("messages").scrollTop = $("messages").scrollHeight;
+  setTimeout(() => { t.innerHTML = html; $("messages").scrollTop = $("messages").scrollHeight;
+    speak(spoken || html.replace(/<[^>]+>/g," ")); }, 450);
+}
+const EXAMPLES = {
+  person: ["Мне нужны полтора миллиона на три года, я получаю зарплату в Сбере",
+           "Уберите страховку и смс", "А если взять на пять лет?",
+           "Что вообще такое кредит наличными?"],
+  business: ["Я ИП, 35 платежей в месяц и перевожу физлицам тысяч двести",
+             "А если платежей станет шестьдесят?", "Почему не бесплатный тариф?"],
+  km: ["Покажи, что вышло из встречи", "Сформируй предложение клиенту"],
+  biz: {
+    rko: ["Я ИП, 35 платежей в месяц и перевожу физлицам тысяч двести",
+          "А если платежей станет шестьдесят?", "Почему не бесплатный тариф?"],
+    cowork: ["Нам нужен коворк в облаке на триста пользователей",
+             "А если гибридная версия?", "Чем облако отличается от локального?"],
+    health: ["Нужна медицина для компании, у нас сто двадцать сотрудников",
+             "Нужны анализы и диагностика", "Что входит в тариф Стандарт?"],
+    legal: ["Нам нужно около двадцати договоров в год",
+            "Чем Бизнес+ отличается от Бизнеса?"],
+    crm: ["Нужна CRM на двенадцать менеджеров по продажам",
+          "Есть бесплатный тариф?"],
+    rpa: ["У нас часов двести рутины в месяц — считаете, робот окупится?",
+          "Покажи реальный кейс роботизации"]
+  }
+};
+function renderExamples(role){
+  const list = (role === "business") ? EXAMPLES.biz[PROD] : EXAMPLES[role];
+  $("examples").innerHTML = "Примеры: " + list
+    .map(x => `<button onclick="useExample(this)">${x}</button>`).join("");
+}
+function useExample(btn){ $("chatInput").value = btn.textContent; sendMessage(); }
+
+$("sendBtn").onclick = sendMessage;
+$("chatInput").addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
+
+let ROLE = "person";
+function sendMessage(){
+  const text = $("chatInput").value.trim();
+  if (!text) return;
+  addMsg("user", text.replace(/</g,"&lt;"));
+  $("chatInput").value = "";
+  routeIntent(text);
+}
+
+/* ============================================================
+   КРЕДИТ НАЛИЧНЫМИ — иллюстративная модель
+   Базовая ставка 29,9% — внутри публичного диапазона ПСК
+   24,9–44,8%. Скидка зарплатным −2 п.п. — с офиц. страницы.
+   Страховка и SMS — добровольные опции с явной ценой.
+   ============================================================ */
+const CREDIT = {
+  baseRate: 29.9,        // % годовых, иллюстративно
+  salaryDisc: 2.0,       // п.п., условие с sberbank.ru
+  insDisc: 3.0,          // п.п., иллюстративно
+  insYearPct: 2.4,       // % от суммы в год, иллюстративно
+  smsMonth: 59           // ₽/мес, иллюстративно
+};
+function annuity(S, annualPct, months){
+  const r = annualPct / 100 / 12;
+  return S * r / (1 - Math.pow(1 + r, -months));
+}
+function creditState(){
+  const S = Number($("inAmount").value);
+  const n = Number($("inTerm").value);
+  const salary = $("inSalary").checked;
+  const nothing = $("inNothing").checked;
+  const ins = $("inIns").checked && !nothing;
+  const sms = $("inSms").checked && !nothing;
+  let rate = CREDIT.baseRate - (salary ? CREDIT.salaryDisc : 0) - (ins ? CREDIT.insDisc : 0);
+  rate = Math.max(rate, 5);
+  const pay = annuity(S, rate, n);
+  const insMonth = ins ? S * CREDIT.insYearPct / 100 / 12 : 0;
+  const smsMonth = sms ? CREDIT.smsMonth : 0;
+  const totalMonth = pay + insMonth + smsMonth;
+  const overpay = pay * n - S;                 // проценты
+  const extrasTotal = (insMonth + smsMonth) * n;
+  // контрсценарий: та же сумма, но без страховки
+  const rateNoIns = CREDIT.baseRate - (salary ? CREDIT.salaryDisc : 0);
+  const payNoIns = annuity(S, rateNoIns, n);
+  const totalWithIns = (pay + insMonth) * n;
+  const totalNoIns = payNoIns * n;
+  return {S, n, salary, ins, sms, rate, pay, insMonth, smsMonth, totalMonth,
+          overpay, extrasTotal, totalWithIns, totalNoIns, payNoIns, rateNoIns};
+}
+function renderCredit(){
+  const c = creditState();
+  $("oAmount").textContent = fmt(c.S);
+  $("oTerm").textContent = c.n + " мес.";
+  $("kRate").textContent = c.rate.toFixed(1).replace(".",",") + " %";
+  $("kPay").textContent = fmt(c.pay);
+  $("kTotal").textContent = fmt(c.totalMonth);
+  $("kOver").textContent = fmt(c.overpay + c.extrasTotal);
+  $("insPrice").textContent = fmt(c.S * CREDIT.insYearPct/100/12) + "/мес";
+
+  // breakdown rows
+  const rows = [];
+  rows.push({name:`Кредитный платёж <small>${c.rate.toFixed(1).replace(".",",")}% годовых · аннуитет · ${c.n} мес.</small>`,
+             sum:c.pay, id:null});
+  if (c.ins) rows.push({name:`Страхование жизни <small>ставка ниже на ${CREDIT.insDisc} п.п. · добровольно</small>`,
+             sum:c.insMonth, id:"inIns"});
+  if (c.sms) rows.push({name:`SMS-информирование <small>можно выключить — уведомления есть в приложении</small>`,
+             sum:c.smsMonth, id:"inSms"});
+  $("breakdown").innerHTML = rows.map(r =>
+    `<div class="row"><div class="name">${r.name}</div><div class="sum">${fmt(r.sum)}</div>` +
+    (r.id ? `<button class="rm" onclick="removeOpt('${r.id}')">убрать</button>` : "") +
+    `</div>`).join("") +
+    `<div class="row total"><div class="name">Итого в месяц <small>полная сумма обязательств</small></div><div class="sum">${fmt(c.totalMonth)}</div></div>`;
+
+  // честный вердикт: страховка выгодна или нет в полных деньгах
+  const v = $("verdict");
+  if (c.ins){
+    const diff = c.totalNoIns - c.totalWithIns;
+    if (diff > 0){
+      v.className = "verdict good";
+      v.innerHTML = `✔ При ваших параметрах страховка <b>экономит ${fmt(diff)}</b> за весь срок: скидка к ставке больше стоимости полиса.` +
+        `<small>Это расчёт по иллюстративной модели. Отказаться можно в любой момент — ставка пересчитается, мы покажем это заранее.</small>`;
+    } else {
+      v.className = "verdict warn";
+      v.innerHTML = `⚠ Внимание: при ваших параметрах страховка <b>дороже на ${fmt(-diff)}</b> за весь срок — скидка к ставке её не перекрывает.` +
+        `<small>Мы обязаны показать это честно. Выключите её выше — платёж и переплата пересчитаются сразу.</small>`;
+    }
+  } else {
+    const diff = c.totalNoIns - c.totalWithIns;
+    v.className = diff > 0 ? "verdict warn" : "verdict good";
+    v.innerHTML = diff > 0
+      ? `Страховка выключена. Кстати: с ней ставка была бы ниже на ${CREDIT.insDisc} п.п. — за весь срок это <b>сэкономило бы ${fmt(diff)}</b> даже с учётом цены полиса. Решение — ваше, мы показываем оба сценария.`
+      : `Страховка выключена — при ваших параметрах без неё и правда дешевле. Мы не будем её рекомендовать. <small>Платёж: ${fmt(c.totalMonth)}/мес, переплата ${fmt(c.overpay + c.extrasTotal)}.</small>`;
+  }
+}
+function removeOpt(id){
+  $(id).checked = false;
+  $("inNothing").checked = false;
+  syncOpts(); renderCredit();
+  addMsg("system","Опция убрана — цена пересчитана сразу. Так клиент сам управляет ценой.");
+}
+function syncOpts(){
+  const nothing = $("inNothing").checked;
+  $("inIns").disabled = nothing; $("inSms").disabled = nothing;
+  $("optIns").classList.toggle("on", $("inIns").checked && !nothing);
+  $("optSms").classList.toggle("on", $("inSms").checked && !nothing);
+  $("optSalary").classList.toggle("on", $("inSalary").checked);
+  $("optNone").classList.toggle("on", nothing);
+  $("optIns").classList.toggle("removed", nothing);
+  $("optSms").classList.toggle("removed", nothing);
+}
+["inAmount","inTerm","inSalary","inIns","inSms","inNothing"].forEach(id =>
+  $(id).addEventListener("input", () => { syncOpts(); renderCredit(); }));
+
+
+/* ============================================================
+   РКО — реальные пакеты СберБизнеса (открытые данные, 27.09.2026)
+   Упрощённая демонстрационная модель: абонплата + платежи ЮЛ/ИП
+   в другие банки + переводы физлицам + снятие наличных по карте.
+   ============================================================ */
+const RKO = [
+  { name:"Лёгкий старт", fee:0, freePay:5, payFee:199,
+    flFree:300000, flPct:0.017, cashFree:300000, cashPct:0.02, cashMin:400,
+    ipOnly:false,
+    note:"0 ₽ обслуживания, но всего 5 бесплатных платежей" },
+  { name:"Только для ИП", fee:590, freePay:6, payFee:100,
+    flFree:500000, flPct:0.017, cashFree:100000, cashPct:0.02, cashMin:400,
+    ipOnly:true,
+    note:"Дешёвая абонплата для ИП без большого оборота платежей" },
+  { name:"Набирая обороты", fee:1290, freePay:20, payFee:100,
+    flFree:300000, flPct:0.017, cashFree:300000, cashPct:0.02, cashMin:400,
+    ipOnly:false,
+    note:"20 бесплатных платежей — для растущего бизнеса" },
+  { name:"Полным ходом", fee:3990, freePay:50, payFee:100,
+    flFree:600000, flPct:0.005, cashFree:300000, cashPct:0.02, cashMin:400,
+    ipOnly:false,
+    note:"50 бесплатных платежей и расширенные лимиты на физлиц" }
+];
+function rkoCost(pkg, pay, fl, cash){
+  const payments = pkg.fee + Math.max(0, pay - pkg.freePay) * pkg.payFee;
+  const flCost = Math.max(0, fl - pkg.flFree) * pkg.flPct;
+  const cashOver = Math.max(0, cash - pkg.cashFree);
+  const cashCost = cashOver > 0 ? Math.max(pkg.cashMin, cashOver * pkg.cashPct) : 0;
+  return { total: payments + flCost + cashCost, payments, flCost, cashCost };
+}
+function rkoState(){
+  return { ip: $("inIP").checked,
+           pay: Number($("inPay").value),
+           fl: Number($("inFL").value),
+           cash: Number($("inCash").value) };
+}
+function renderRKO(){
+  const s = rkoState();
+  $("oPay").textContent = s.pay;
+  $("oFL").textContent = fmt(s.fl);
+  $("oCash").textContent = fmt(s.cash);
+  $("optIP").classList.toggle("on", s.ip);
+
+  const rows = RKO.filter(p => !p.ipOnly || s.ip).map(p => ({p, c: rkoCost(p, s.pay, s.fl, s.cash)}));
+  const best = rows.reduce((a,b) => b.c.total < a.c.total ? b : a);
+  $("rkoTable").innerHTML =
+    `<tr><th>Пакет</th><th>Абонплата</th><th>Платежи ЮЛ/ИП</th><th>Переводы физлицам</th><th>Наличные</th><th>Итого/мес</th></tr>` +
+    rows.map(({p,c}) => `<tr class="${p===best.p?"best":""}">
+      <td>${p.name}${p.ipOnly?' <span class="tag src">ИП</span>':""}</td>
+      <td>${fmt(p.fee)}</td><td>${fmt(c.payments - p.fee)}</td>
+      <td>${fmt(c.flCost)}</td><td>${fmt(c.cashCost)}</td>
+      <td class="${p===best.p?"min":""}">${fmt(c.total)}</td></tr>`).join("");
+
+  // объяснение и порог смены
+  const lines = [];
+  lines.push(`Рекомендуем <b>«${best.p.name}»</b>: ${fmt(best.c.total)} в месяц при вашем профиле.`);
+  const cheapest0 = rows.find(r => r.p.fee === 0);
+  if (cheapest0 && best.p.fee > 0){
+    lines.push(`Бесплатный «Лёгкий старт» обошёлся бы в ${fmt(cheapest0.c.total)} — на ${fmt(cheapest0.c.total - best.c.total)} дороже: нулевая абонплата не значит нулевые расходы.`);
+  }
+  // порог: при каком числе платежей меняется рекомендация (по текущим fl/cash)
+  const bestAt = (n) => RKO.filter(p => !p.ipOnly || s.ip)
+    .map(p => ({p, c: rkoCost(p, n, s.fl, s.cash)}))
+    .reduce((a,b) => b.c.total < a.c.total ? b : a);
+  let downAt = null, upAt = null;
+  for (let n = s.pay - 1; n >= 0; n--){
+    const r = bestAt(n);
+    if (r.p !== best.p && r.c.total < best.c.total){ downAt = {n, name: r.p.name}; break; }
+  }
+  for (let n = s.pay + 1; n <= 150; n++){
+    const r = bestAt(n);
+    if (r.p !== best.p && r.c.total < best.c.total){ upAt = {n, name: r.p.name}; break; }
+  }
+  if (downAt) lines.push(`Если платежей станет ${downAt.n} или меньше в месяц — выгоднее «${downAt.name}». Мы предупредим, а не поменяем тариф без вас.`);
+  if (upAt) lines.push(`Если платежей станет ${upAt.n}+ в месяц — выгоднее «${upAt.name}». Мы предупредим, а не поменяем тариф без вас.`);
+  const v = $("rkoVerdict");
+  v.className = "verdict good";
+  v.innerHTML = lines.map(l => `• ${l}`).join("<br>") +
+    `<small>Что не учтено в демо: валютные операции, внесение наличных, акции, регион. Перед подключением — сверка с официальным тарифным справочником.</small>`;
+}
+["inPay","inFL","inCash","inIP"].forEach(id =>
+  $(id).addEventListener("input", renderRKO));
+
+/* ============================================================
+   ПРОДУКТЫ ЭКОСИСТЕМЫ — переключение и конструкторы
+   ============================================================ */
+let PROD = "rko";
+const PROD_NAMES = { rko:"РКО", cowork:"GigaCowork", health:"СберЗдоровье",
+  legal:"СберПраво", crm:"SberCRM", rpa:"ГигаАРПА" };
+function setProd(p, silent){
+  PROD = p;
+  document.querySelectorAll(".prod-tab").forEach(b =>
+    b.classList.toggle("active", b.dataset.prod === p));
+  Object.keys(PROD_NAMES).forEach(k =>
+    $("prod-"+k).classList.toggle("hidden", k !== p));
+  if (!silent) renderExamples("business");
+}
+document.querySelectorAll(".prod-tab").forEach(b =>
+  b.onclick = () => setProd(b.dataset.prod));
+
+/* ---------- GigaCowork ---------- */
+// вводные: облако от 2,5 млн ₽/год до 200 польз.; дальше — иллюстративная шкала
+let CW_VER = "cloud";
+document.querySelectorAll("#coworkSeg button").forEach(b =>
+  b.onclick = () => {
+    CW_VER = b.dataset.v;
+    document.querySelectorAll("#coworkSeg button").forEach(x =>
+      x.classList.toggle("active", x === b));
+    renderCowork();
+  });
+function coworkCalc(){
+  const users = Number($("inCwUsers").value);
+  const base = 2500000, baseUsers = 200, perBlock = 500000; // +50 пользователей = +500 тыс ₽ (иллюстрация)
+  if (CW_VER === "onprem") return { users, price: null };
+  let price = base + Math.max(0, Math.ceil((users - baseUsers)/50)) * perBlock;
+  let multNote = "";
+  if (CW_VER === "hybrid"){ price = Math.round(price * 1.5); multNote = " ×1,5 за гибридную схему"; }
+  return { users, price, multNote };
+}
+function renderCowork(){
+  const c = coworkCalc();
+  $("oCwUsers").textContent = c.users;
+  $("kCwVers").textContent = {cloud:"Облако", hybrid:"Гибрид", onprem:"Локально"}[CW_VER];
+  if (c.price === null){
+    $("kCwTotal").textContent = "индивидуально";
+    $("kCwSeat").textContent = "—";
+    $("cwBreak").innerHTML =
+      `<div class="row"><div class="name">Локальная поставка <span class="tag unk">неизвестно</span><small>цена зависит от контура, оборудования и требований ИБ</small></div><div class="sum">—</div></div>
+       <div class="row"><div class="name">Как получить цену<small>аудит инфраструктуры → фиксированная смета до договора</small></div><div class="sum">—</div></div>`;
+    $("cwVerdict").className = "verdict";
+    $("cwVerdict").innerHTML = "Мы не показываем цифру, которую не можем подтвердить. Локальная версия считается после аудита — и это тоже часть честной цены: <b>неизвестное честно помечено неизвестным</b>. Ориентир по облаку — ниже в переключателе.";
+    return;
+  }
+  $("kCwTotal").textContent = fmt(c.price);
+  $("kCwSeat").textContent = fmt(c.price / c.users / 12);
+  $("cwBreak").innerHTML =
+    `<div class="row"><div class="name">Платформа, обновления, поддержка <span class="tag src">включено</span></div><div class="sum">${fmt(c.price)}/год</div></div>
+     <div class="row"><div class="name">Пользователи: ${c.users} <small>до 200 — в базовой цене${c.users>200?`, сверх — блоками по 50`:""}</small> <span class="tag est">оценка</span></div><div class="sum">${fmt(c.price/c.users/12)}/польз/мес</div></div>
+     <div class="row"><div class="name">Запросы к моделям</div><div class="sum">безлимитно</div></div>`;
+  $("cwVerdict").className = "verdict good";
+  $("cwVerdict").innerHTML =
+    `При ${c.users} пользователях место стоит <b>${fmt(c.price/c.users/12)} в месяц</b> — с ростом штата цена места падает. Для сравнения на встрече клиент просил тест 2 недели — он доступен до оплаты. <small>Вводные команды, актуальность подтверждает владелец продукта <span class="tag est">оценка</span>.</small>`;
+}
+$("inCwUsers").addEventListener("input", renderCowork);
+
+/* ---------- СберЗдоровье ---------- */
+// цена за сотрудника в год по численности (из презентации продукта, ККСБ 2026)
+const HL_TIERS = [
+  { max:10,   b:23200, s:38030, p:50870, r:76510 },
+  { max:25,   b:20300, s:33280, p:44300, r:66740 },
+  { max:50,   b:17400, s:28520, p:38010, r:57240 },
+  { max:100,  b:14500, s:23770, p:31920, r:47950 },
+  { max:500,  b:11600, s:19020, p:26490, r:38430 },
+  { max:1000, b:9430,  s:15450, p:22360, r:31350 },
+  { max:5000, b:8560,  s:14030, p:18880, r:28330 },
+  { max:10000,b:8135,  s:13330, p:17940, r:26915 }
+];
+const HL_TARIFFS = [
+  { key:"b", name:"Базовый", inc:"онлайн-консультации 24/7 + 4 приёма в клиниках" },
+  { key:"s", name:"Стандарт", inc:"+ 6 приёмов, анализы, инструментальная диагностика" },
+  { key:"p", name:"Премиум", inc:"+ безлимит клиник, КТ и МРТ, чекап, выезд врача" },
+  { key:"r", name:"Расширенный", inc:"всё безлимитно: приёмы, анализы, диагностика, выезд" }
+];
+function hlTier(n){ return HL_TIERS.find(t => n <= t.max); }
+function renderHealth(){
+  const n = Number($("inHlStaff").value);
+  const needAn = $("inHlAn").checked, needUn = $("inHlUn").checked;
+  $("oHlStaff").textContent = n;
+  $("optHlAn").classList.toggle("on", needAn);
+  $("optHlUn").classList.toggle("on", needUn);
+  const tier = hlTier(n);
+  const rec = needUn ? "p" : needAn ? "s" : "b";
+  $("hlTable").innerHTML =
+    `<tr><th>Тариф</th><th>За сотрудника/год</th><th>За сотрудника/мес</th><th>Компания/год</th></tr>` +
+    HL_TARIFFS.map(t => `<tr class="${t.key===rec?"best":""}">
+      <td>${t.name}<br><small style="color:var(--muted)">${t.inc}</small></td>
+      <td>${fmt(tier[t.key])}</td><td>${fmt(tier[t.key]/12)}</td>
+      <td class="${t.key===rec?"min":""}">${fmt(tier[t.key]*n)}</td></tr>`).join("");
+  const lines = [];
+  const rt = HL_TARIFFS.find(t => t.key === rec);
+  lines.push(`Под ваши ответы — <b>«${rt.name}»</b>: ${fmt(tier[rec]*n)} в год за ${n} сотрудников (${fmt(tier[rec]/12)} за человека в месяц).`);
+  const t5 = HL_TIERS[0];
+  if (n > 10) lines.push(`Эффект масштаба честно: при 3–10 сотрудниках «${rt.name}» стоил бы ${fmt(t5[rec])} за человека — у вас ${fmt(tier[rec])}, на ${Math.round((1-tier[rec]/t5[rec])*100)}% меньше.`);
+  if (!needAn) lines.push("Если анализы всё же понадобятся — «Стандарт» дороже «Базового» на " + fmt((tier.s-tier.b)*n) + " в год, но включает их без доплат на месте.");
+  lines.push("Семейный доступ уже включён: владелец полиса + 1 взрослый и 3 ребёнка.");
+  $("hlVerdict").className = "verdict good";
+  $("hlVerdict").innerHTML = lines.map(l => "• " + l).join("<br>") +
+    `<small>Программа действует 1 год после 100% предоплаты. Цены — из материалов продукта (ККСБ, 2026).</small>`;
+}
+["inHlStaff","inHlAn","inHlUn"].forEach(id =>
+  $(id).addEventListener("input", renderHealth));
+
+/* ---------- СберПраво ---------- */
+const LG_PACKS = [
+  { name:"Бизнес", price:500000, docs:15, consult:6, opin:3, checks:10,
+    extra:"досудебные претензии — 3, корпоративные документы — 3" },
+  { name:"Бизнес+", price:800000, docs:30, consult:8, opin:5, checks:12,
+    extra:"+ участие юриста в переговорах (5), ЛНА (5), аудит скоринга ФНС (5)" }
+];
+function renderLegal(){
+  const docs = Number($("inLgDocs").value);
+  $("oLgDocs").textContent = docs;
+  const rec = docs <= 15 ? LG_PACKS[0] : LG_PACKS[1];
+  $("lgCards").innerHTML = LG_PACKS.map(p => `
+    <div class="unit-card ${p===rec?"best":""}">
+      ${p===rec?'<div class="ribbon">рекомендуем</div>':""}
+      <div class="nm">СберПраво «${p.name}»</div>
+      <div class="pr">${fmt(p.price)}<small> / год</small></div>
+      <ul>
+        <li>Договоры: <b>${p.docs} в год</b> → <b>${fmt(p.price/p.docs)}</b> за документ</li>
+        <li>Устные консультации для бизнеса: ${p.consult} · письменные заключения: ${p.opin}</li>
+        <li>Проверка контрагентов: ${p.checks} в год</li>
+        <li>${p.extra}</li>
+      </ul>
+    </div>`).join("");
+  const lines = [];
+  if (docs <= 15){
+    lines.push(`Вам хватает «Бизнеса»: ${docs} договоров при лимите 15 — <b>${fmt(500000)}/год</b>, документ выходит ${fmt(500000/15)}.`);
+    lines.push(`«Бизнес+» пока не нужен: платить +300 000 ₽ за неиспользуемые лимиты — нечестно, мы это показываем.`);
+  } else {
+    lines.push(`Вам нужно ${docs} договоров в год — лимит «Бизнеса» (15) исчерпан. <b>«Бизнес+» — ${fmt(800000)}/год</b>, документ выходит ${fmt(800000/30)} — на 20% дешевле за единицу.`);
+    lines.push("Разовый договор у внешнего юриста обычно стоит 15–50 тыс ₽ — сравните с ценой единицы в пакете.");
+  }
+  $("lgVerdict").className = "verdict good";
+  $("lgVerdict").innerHTML = lines.map(l => "• " + l).join("<br>") +
+    `<small>Состав пакетов — из презентации «СберПраво» (04.2026). Сверхлимитные услуги — по прейскуранту, их цена показывается до заказа.</small>`;
+}
+$("inLgDocs").addEventListener("input", renderLegal);
+
+/* ---------- SberCRM ---------- */
+const CRM_TARIFFS = [
+  { name:"Базовый", per:0, note:"до 3–5 пользователей · 1 ГБ · сделки, задачи, календарь" },
+  { name:"Расширенный", per:500, note:"5 ГБ · CRM-маркетинг, формы лидов, профиль контрагента" },
+  { name:"Профессиональный", per:1000, note:"50 ГБ · Open API, BPMN-конструктор, сквозная аналитика" }
+];
+function renderCRM(){
+  const u = Number($("inCrmUsers").value);
+  const year = $("inCrmYear").checked;
+  const disc = year ? 0.7 : 1;
+  $("oCrmUsers").textContent = u;
+  $("optCrmYear").classList.toggle("on", year);
+  const rows = CRM_TARIFFS.map(t => {
+    const blocked = t.per === 0 && u > 5;
+    const m = Math.round(t.per * u * disc);
+    return { t, m, blocked };
+  });
+  const best = rows.filter(r => !r.blocked).reduce((a,b) => b.m < a.m ? b : a);
+  $("crmTable").innerHTML =
+    `<tr><th>Тариф</th><th>За пользователя/мес</th><th>Итого/мес</th><th>Состав</th></tr>` +
+    rows.map(({t,m,blocked}) => `<tr class="${t===best.t?"best":""}">
+      <td>${t.name}</td>
+      <td>${t.per === 0 ? "0 ₽" : fmt(Math.round(t.per*disc)) + (year?" <small style='color:var(--muted)'>при оплате за год</small>":"")}</td>
+      <td class="${t===best.t?"min":""}">${blocked ? "недоступен" : fmt(m)}</td>
+      <td><small style="color:var(--muted)">${t.note}${blocked ? " · лимит пользователей превышен" : ""}</small></td></tr>`).join("");
+  const lines = [];
+  if (u <= 5) lines.push(`Вам может хватить <b>бесплатного</b> тарифа — мы показываем его первым, хотя он ничего не приносит банку.`);
+  else lines.push(`Бесплатный тариф закрыт при ${u} пользователях — минимальная честная цена: <b>${fmt(best.m)}/мес</b> («${best.t.name}»).`);
+  lines.push(year ? "Оплата за 12 месяцев даёт −30% — скидка видна до оплаты, а не «потом вернём бонусами»." : "Помесячная оплата дороже: включите «за 12 месяцев» — увидите −30% сразу.");
+  lines.push(`В пересчёте на человека: ${fmt(best.m/u/30*1)} в день — это цена вопроса «в какой CRM мы ведём клиентов».`);
+  $("crmVerdict").className = "verdict good";
+  $("crmVerdict").innerHTML = lines.map(l => "• " + l).join("<br>") +
+    `<small>Тарифы — sbercrm.com/pricing, упрощены для демо; скидка за 12 месяцев — по публичным условиям продукта.</small>`;
+}
+["inCrmUsers","inCrmYear"].forEach(id =>
+  $(id).addEventListener("input", renderCRM));
+
+/* ---------- ГигаАРПА ---------- */
+function renderRPA(){
+  const hrs = Number($("inRpaHours").value);
+  const costHour = 800; // ₽/час рутины — иллюстративная оценка
+  const yearSave = hrs * costHour * 12;
+  const price = 550000;
+  const payback = price / (hrs * costHour);
+  $("oRpaHours").textContent = hrs;
+  $("kRpaSave").textContent = fmt(yearSave);
+  $("kRpaPayback").textContent = payback > 36 ? "> 36" : payback.toFixed(1).replace(".",",");
+  const lines = [];
+  lines.push(`При ${hrs} часах рутины в месяц робот высвобождает ≈ <b>${fmt(yearSave)} в год</b> (при 800 ₽/час).`);
+  if (payback <= 12) lines.push(`Окупаемость «от 550 000 ₽» — <b>${payback.toFixed(1).replace(".",",")} мес</b>: внутри года. Такой расчёт можно показать ЛПР до подписания.`);
+  else if (payback <= 36) lines.push(`Окупаемость — <b>${payback.toFixed(1).replace(".",",")} мес</b>: честно — не мгновенно, решение стоит принимать по расчёту, а не по обещаниям.`);
+  else lines.push(`При таком объёме роботизация окупается дольше 3 лет — <b>честно: возможно, вам она пока не нужна</b>. Мы показываем и этот случай.`);
+  lines.push("Кейс «Бакалея»: робот на сверке выписок — бюджет 794 000 ₽, 25 рабочих дней, скорость ×25, ошибки → до нуля.");
+  $("rpaVerdict").className = "verdict good";
+  $("rpaVerdict").innerHTML = lines.map(l => "• " + l).join("<br>") +
+    `<small>Точная цена зависит от процесса и считается после аудита — до аудита честно показываем «от» <span class="tag est">оценка</span>.</small>`;
+}
+$("inRpaHours").addEventListener("input", renderRPA);
+
+/* ============================================================
+   КМ — ассистент встречи (демо на реальной расшифровке 26.08.2026)
+   Извлечение — локальными правилами из встроенного текста.
+   ============================================================ */
+const KM_LINES = [
+  ["Менеджер","Покажу платформу: агенты, сценарии, статистика использования."],
+  ["Клиент","Мы сельское хозяйство. Отчётность, работа агронома в поле — вот что интересно."],
+  ["Клиент","Нам нужно понимать, что мы на себя можем переложить, а не чужие кейсы."],
+  ["Менеджер","Облако — от 200 пользователей, от 2 500 000 ₽ в год, безлимит на запросы."],
+  ["Клиент","У нас таких пользователей минимум двести, а то и триста. Можно ли в рассрочку?"],
+  ["Клиент","Руководитель автоматизации подключится позже, собственник первым делом спросит про деньги."],
+  ["Менеджер","Готовы помочь с экономическим обоснованием для собственника."],
+  ["Клиент","Дайте две недели тестового доступа — проверим на своих данных."]
+];
+let kmTimer = null;
+$("btnAnalyze").onclick = () => {
+  const box = $("transcript");
+  box.innerHTML = ""; $("kmFacts").innerHTML = ""; $("kmOffer").innerHTML = "";
+  $("btnAnalyze").disabled = true;
+  let i = 0;
+  kmTimer = setInterval(() => {
+    if (i >= KM_LINES.length){
+      clearInterval(kmTimer); kmTimer = null;
+      $("btnAnalyze").disabled = false;
+      kmExtract();
+      return;
+    }
+    const [who, text] = KM_LINES[i++];
+    const d = document.createElement("div");
+    d.className = "tline";
+    d.innerHTML = `<span class="who ${who==="Клиент"?"client":""}">${who}:</span> ${text}`;
+    box.appendChild(d); box.scrollTop = box.scrollHeight;
+  }, 700);
+};
+$("btnKmReset").onclick = () => {
+  if (kmTimer){ clearInterval(kmTimer); kmTimer = null; }
+  $("btnAnalyze").disabled = false;
+  $("transcript").innerHTML = '<div style="color:#8A93A0">Здесь появится запись встречи…</div>';
+  $("kmFacts").innerHTML = ""; $("kmOffer").innerHTML = "";
+};
+function kmExtract(){
+  const full = KM_LINES.map(l => l[1]).join(" ").toLowerCase();
+  const facts = [];
+  facts.push(["Отрасль", /сельск|агро/.test(full) ? "Сельское хозяйство" : "не определена",
+              /сельск|агро/.test(full) ? "src" : "unk", /сельск|агро/.test(full) ? "из записи" : "нет данных"]);
+  facts.push(["Задачи клиента", "отчётность, помощь агроному в поле", "src", "из записи"]);
+  facts.push(["Число пользователей", "200–300", "src", "из записи"]);
+  facts.push(["Ограничения по данным", "не озвучены — уточнить", "unk", "неизвестно"]);
+  facts.push(["Ключевой вопрос ЛПР", "«первым делом спросит про деньги»", "src", "из записи"]);
+  facts.push(["Запрошенные условия", "рассрочка платежа; тестовый доступ 2 недели", "src", "из записи"]);
+  $("kmFacts").innerHTML =
+    `<div class="pp-sec"><div class="h">Профиль из записи</div>` +
+    facts.map(([k,v,tag,src]) =>
+      `<div class="fact"><div class="k">${k}<span class="tag ${tag}">${src}</span></div><div class="v">${v}</div></div>`).join("") +
+    `</div>`;
+  setTimeout(() => {
+    $("kmOffer").innerHTML =
+      `<div class="pp-sec"><div class="h">Черновик предложения (проверяет менеджер)</div>
+      <ul>
+        <li><b>GigaCowork, облако</b> — от 2,5 млн ₽/год без НДС (вводные команды, до 200 пользователей)</li>
+        <li>Сценарии пилота: <b>отчётность + агроном в поле</b> — те, что назвал клиент</li>
+        <li>Следующий шаг: <b>2 недели тестового доступа</b> на данных клиента</li>
+        <li>К согласованию: <b>рассрочка</b> в рамках календарного года</li>
+        <li>Приложение к письму: <b>экономическое обоснование для собственника</b> — его вопрос «про деньги» закрываем заранее</li>
+      </ul></div>`;
+    aiSay("Готово. Из записи собран профиль: сельское хозяйство, 200–300 пользователей, задачи — отчётность и агроном. Черновик предложения справа: облако, пилот на две недели, рассрочка и экономическое обоснование для собственника. Неизвестное помечено — ограничения по данным клиент не озвучил, их надо уточнить, а не выдумать.");
+  }, 900);
+}
+
+/* ============================================================
+   ПАСПОРТ ЦЕНЫ — универсальный для всех ролей
+   ============================================================ */
+function ppSection(title, items){
+  return `<div class="pp-sec"><div class="h">${title}</div><ul>` +
+    items.map(i => `<li>${i}</li>`).join("") + `</ul></div>`;
+}
+function openPassport(html, meta){
+  $("ppMeta").textContent = meta;
+  $("ppBody").innerHTML = html;
+  $("modalBack").classList.add("open");
+}
+$("btnClose").onclick = () => $("modalBack").classList.remove("open");
+$("modalBack").onclick = e => { if (e.target === $("modalBack")) $("modalBack").classList.remove("open"); };
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("modalBack").classList.remove("open"); });
+$("btnPrint").onclick = () => window.print();
+
+$("btnPassport").onclick = () => {
+  const c = creditState();
+  openPassport(
+    ppSection("Продукт и рекомендация", [
+      `Кредит наличными: <b>${fmt(c.S)}</b> на <b>${c.n} мес.</b>`,
+      `Ставка <b>${c.rate.toFixed(1).replace(".",",")}%</b>: базовая ${CREDIT.baseRate}%` +
+        (c.salary ? ` − ${CREDIT.salaryDisc} п.п. (зарплатный клиент)` : "") +
+        (c.ins ? ` − ${CREDIT.insDisc} п.п. (страхование)` : "")
+    ]) +
+    ppSection("Полная стоимость в месяц", [
+      `Кредитный платёж: <b>${fmt(c.pay)}</b>`,
+      c.ins ? `Страхование жизни: <b>${fmt(c.insMonth)}</b> — добровольно` : "Страхование: не подключено",
+      c.sms ? `SMS: <b>${fmt(c.smsMonth)}</b>` : "SMS: выключено",
+      `<b>Итого: ${fmt(c.totalMonth)}/мес</b> · переплата за срок ${fmt(c.overpay + c.extrasTotal)}`
+    ]) +
+    ppSection("Что не входит и что проверить", [
+      "Итоговая ставка утверждается банком по заявке — расчёт иллюстративный <span class='tag est'>оценка</span>",
+      "ПСК по публичным данным: 24,9–44,8% <span class='tag src'>sberbank.ru, 27.09.2026</span>",
+      "Скидка зарплатным −2 п.п. подтверждена официальной страницей <span class='tag src'>sberbank.ru</span>",
+      "Стоимость полиса и влияние на ставку — параметры модели <span class='tag est'>оценка</span>",
+      "Отказ от любой опции — в любой момент, перерасчёт показывается заранее"
+    ]) +
+    ppSection("Условия, при которых вывод меняется", [
+      "Если убрать страховку — ставка вырастет на 3 п.п., платёж пересчитается",
+      "Если срок сократится — переплата упадёт, платёж вырастет",
+      "Досрочное погашение — без комиссии (по закону о потребкредите)"
+    ]) +
+    ppSection("Следующий шаг", [
+      "Клиент подтверждает параметры → заявка → банк подтверждает ставку",
+      "Любое изменение входных данных делает этот паспорт неактуальным"
+    ]),
+    `ID ${Date.now().toString(36).toUpperCase()} · ${new Date().toLocaleDateString("ru-RU")} · правила v3.0 · режим: частный клиент`
+  );
+};
+
+$("btnPassport2").onclick = () => {
+  const s = rkoState();
+  const rows = RKO.filter(p => !p.ipOnly || s.ip).map(p => ({p, c: rkoCost(p, s.pay, s.fl, s.cash)}));
+  const best = rows.reduce((a,b) => b.c.total < a.c.total ? b : a);
+  openPassport(
+    ppSection("Профиль операций", [
+      `Платежей ЮЛ/ИП: <b>${s.pay}/мес</b> · физлицам: <b>${fmt(s.fl)}/мес</b> · наличные: <b>${fmt(s.cash)}/мес</b>`,
+      `Форма: <b>${s.ip ? "ИП" : "ООО/прочие"}</b>`
+    ]) +
+    ppSection("Рекомендация", [
+      `Пакет <b>«${best.p.name}»</b> — <b>${fmt(best.c.total)}/мес</b> при вашем профиле`,
+      `Почему: минимальная полная стоимость среди допустимых пакетов, а не минимальная абонплата`,
+      best.p.note
+    ]) +
+    ppSection("Из чего состоит цена", [
+      `Абонплата: ${fmt(best.p.fee)} · платежи сверх лимита: ${fmt(best.c.payments - best.p.fee)}`,
+      `Переводы физлицам сверх лимита: ${fmt(best.c.flCost)} · наличные: ${fmt(best.c.cashCost)}`
+    ]) +
+    ppSection("Что не входит и что проверить", [
+      "Учтены 4 составляющие из большего тарифного справочника <span class='tag est'>частичный расчёт</span>",
+      "Не учтены: валюта, внесение наличных, акции, регион <span class='tag unk'>неизвестно</span>",
+      "Тарифы: открытые данные СберБизнеса на 27.09.2026 <span class='tag src'>sberbank.ru</span> — перед подключением сверка с менеджером",
+      "Сравнение с другими банками не выполнялось — вывод «конкурентно рынку» из этого расчёта не следует"
+    ]) +
+    ppSection("После подключения", [
+      "Раз в месяц прогноз сверяется с фактическими списаниями",
+      "Если профиль операций изменится — банк предложит пересмотр пакета, но не поменяет его без вашего согласия"
+    ]),
+    `ID ${Date.now().toString(36).toUpperCase()} · ${new Date().toLocaleDateString("ru-RU")} · правила v3.0 · режим: бизнес`
+  );
+};
+
+/* ---------- объяснения «не впихиваем» ---------- */
+$("btnExplain").onclick = () => aiSay(
+  "Кредит наличными — это деньги на любые цели без залога. Вы берёте сумму и возвращаете её равными платежами. Из чего состоит ваша цена: <b>1)</b> сам кредит — зависит от суммы, срока и ставки; <b>2)</b> добровольные опции — страховка и SMS, каждая с ценой и кнопкой «убрать». Никаких скрытых комиссий — даже страховка только по желанию, таковы правила продукта. Если что-то не нужно — скажите «убери страховку» или нажмите крестик в таблице.",
+  "Кредит наличными — деньги на любые цели без залога. Цена состоит из кредита и добровольных опций. Всё, что не нужно, можно убрать — и сумма пересчитается сразу."
+);
+$("btnExplain2").onclick = () => aiSay(
+  "Разница пакетов — не «хороший или плохой», а под разный профиль. «Лёгкий старт» — 0 ₽, но только 5 бесплатных платежей: при 30 платежах он станет дороже платного пакета. «Набирая обороты» — 20 платежей включены. «Полным ходом» — 50. Смотрите на итог в месяц при своём профиле, а не на абонплату.",
+  "Разница пакетов — под разный профиль операций. Смотрите на итог в месяц, а не на абонплату."
+);
+
+/* ---------- объяснения и паспорта новых продуктов ---------- */
+$("btnExplainCw").onclick = () => aiSay(
+  "GigaCowork — корпоративный ИИ-ассистент: сотрудники задают вопросы, он отвечает по документам компании. <b>Облако</b> — быстрый старт, данные в контуре Сбера, от 200 пользователей. <b>Гибрид</b> — чувствительные данные остаются у вас, модели — в облаке. <b>Локально</b> — всё в вашем контуре, цена только после аудита. Запросы к моделям безлимитны — вы не платите за каждый вопрос сотрудника.",
+  "Облако — быстро и дешевле. Гибрид — данные у вас, модели в облаке. Локально — всё у вас, цена после аудита."
+);
+$("btnExplainHl").onclick = () => aiSay(
+  "Все тарифы включают безлимитные онлайн-консультации: терапевт и педиатр 24/7, медицинский советник, узкие специалисты. <b>Базовый</b> добавляет 4 приёма в клиниках. <b>Стандарт</b> — 6 приёмов, анализы и инструментальную диагностику. <b>Премиум</b> — безлимит клиник, КТ и МРТ, чекап и выезд врача на дом. <b>Расширенный</b> — всё безлимитно. Семья сотрудника включена: ещё 1 взрослый и 3 ребёнка.",
+  "Базовый — консультации и 4 приёма. Стандарт — плюс анализы. Премиум — безлимит клиник и выезд врача. Расширенный — всё безлимитно."
+);
+$("btnExplainLg").onclick = () => aiSay(
+  "«Бизнес» — 500 тысяч в год: 15 договоров, 6 консультаций, 3 письменных заключения, 10 проверок контрагентов. «Бизнес+» — 800 тысяч: договоров и лимитов вдвое больше, плюс участие юриста в переговорах, локальные нормативные акты и аудит скоринга ФНС. Считайте цену одного договора: 33 тысячи против 27 — разница видна сразу.",
+  "Бизнес — 15 договоров в год. Бизнес+ — 30, плюс юрист на переговорах. Цена одного договора: 33 тысячи против 27."
+);
+$("btnExplainCrm").onclick = () => aiSay(
+  "SberCRM ведёт клиентов и сделки. <b>Базовый</b> — бесплатно до 3–5 пользователей: сделки, задачи, календарь. <b>Расширенный</b> — 500 ₽ за пользователя: маркетинг, формы сбора лидов, профиль контрагента. <b>Профессиональный</b> — 1000 ₽: открытый API, конструктор бизнес-процессов, сквозная аналитика. При оплате за год — заметно дешевле, скидка показана заранее.",
+  "Базовый бесплатен для маленькой команды. Расширенный добавляет маркетинг. Профессиональный — API и автоматизацию. За год — дешевле."
+);
+$("btnExplainRpa").onclick = () => aiSay(
+  "Кейс «Бакалея», производитель продуктов питания. Робот сверяет банковские выписки: сопоставляет операции, анализирует файлы, формирует свод. Бюджет — 794 000 ₽, подключение — 25 рабочих дней. Результат: высвобождено до 0,5 штатной единицы, скорость процесса выросла в 25 раз, ошибки ручного ввода — до нуля. Это реальные цифры из материалов продукта, а не наша выдумка.",
+  "Кейс Бакалея: робот на сверке выписок за 794 тысячи, запуск за 25 дней, скорость выросла в 25 раз, ошибки — к нулю."
+);
+
+$("btnPassportCw").onclick = () => {
+  const c = coworkCalc();
+  openPassport(
+    ppSection("Конфигурация", [
+      `GigaCowork, версия: <b>${{cloud:"Облако",hybrid:"Гибрид",onprem:"Локально"}[CW_VER]}</b>`,
+      `Пользователей: <b>${c.users}</b>`,
+      c.price ? `Стоимость: <b>${fmt(c.price)}/год</b> → ${fmt(c.price/c.users/12)} за пользователя в месяц`
+              : `Цена: <b>индивидуальный расчёт после аудита</b> <span class="tag unk">неизвестно</span>`
+    ]) +
+    ppSection("Из чего состоит цена", [
+      "Платформа, обновления, поддержка — включены <span class='tag src'>вводные команды</span>",
+      "Запросы к моделям — безлимитно",
+      c.price ? "Шкала сверх 200 пользователей — иллюстративная <span class='tag est'>оценка</span>"
+              : "Локальная поставка зависит от контура и ИБ — смета фиксируется до договора"
+    ]) +
+    ppSection("Что проверить перед договором", [
+      "Актуальность вводных подтверждает владелец продукта <span class='tag est'>оценка</span>",
+      "Ограничения по данным клиента — уточнить на встрече <span class='tag unk'>неизвестно</span>",
+      "Доступен тест 2 недели на данных клиента — до оплаты"
+    ]),
+    `ID ${Date.now().toString(36).toUpperCase()} · ${new Date().toLocaleDateString("ru-RU")} · правила v3.0 · режим: бизнес · GigaCowork`
+  );
+};
+
+$("btnPassportHl").onclick = () => {
+  const n = Number($("inHlStaff").value), tier = hlTier(n);
+  const rec = $("inHlUn").checked ? "p" : $("inHlAn").checked ? "s" : "b";
+  const rt = HL_TARIFFS.find(t => t.key === rec);
+  openPassport(
+    ppSection("Программа", [
+      `СберЗдоровье «Корпоративное здоровье+», тариф <b>«${rt.name}»</b>`,
+      `Сотрудников: <b>${n}</b> · ${fmt(tier[rec])} за сотрудника в год · <b>${fmt(tier[rec]*n)}</b> за компанию`
+    ]) +
+    ppSection("Что входит", [
+      "Онлайн-консультации 24/7: терапевт, педиатр, медсоветник, узкие специалисты — безлимитно",
+      rt.inc, "Семейный доступ: + 1 взрослый и 3 ребёнка"
+    ]) +
+    ppSection("Что проверить", [
+      "Цены — из материалов продукта (ККСБ, 2026) <span class='tag src'>презентация</span>",
+      "Программа действует 1 год после 100% предоплаты",
+      "Детская программа — от 50 000 ₽, зависит от числа доступов <span class='tag est'>оценка</span>"
+    ]),
+    `ID ${Date.now().toString(36).toUpperCase()} · ${new Date().toLocaleDateString("ru-RU")} · правила v3.0 · режим: бизнес · СберЗдоровье`
+  );
+};
+
+$("btnPassportLg").onclick = () => {
+  const docs = Number($("inLgDocs").value);
+  const rec = docs <= 15 ? LG_PACKS[0] : LG_PACKS[1];
+  openPassport(
+    ppSection("Рекомендация", [
+      `СберПраво <b>«${rec.name}»</b> — <b>${fmt(rec.price)}/год</b>`,
+      `Ваша потребность: ${docs} договоров/год · лимит пакета: ${rec.docs}`,
+      `Цена одного договора в пакете: <b>${fmt(rec.price/rec.docs)}</b>`
+    ]) +
+    ppSection("Состав пакета", [
+      `Договоры: ${rec.docs} · устные консультации: ${rec.consult} · письменные заключения: ${rec.opin}`,
+      `Проверка контрагентов: ${rec.checks} · ${rec.extra}`
+    ]) +
+    ppSection("Что проверить", [
+      "Состав и цены — из презентации «СберПраво» (04.2026) <span class='tag src'>материалы продукта</span>",
+      "Сверхлимитные услуги — по прейскуранту, цена показывается до заказа"
+    ]),
+    `ID ${Date.now().toString(36).toUpperCase()} · ${new Date().toLocaleDateString("ru-RU")} · правила v3.0 · режим: бизнес · СберПраво`
+  );
+};
+
+$("btnPassportCrm").onclick = () => {
+  const u = Number($("inCrmUsers").value), year = $("inCrmYear").checked;
+  const disc = year ? 0.7 : 1;
+  const rows = CRM_TARIFFS.map(t => ({ t, m: Math.round(t.per*u*disc), blocked: t.per===0 && u>5 }));
+  const best = rows.filter(r => !r.blocked).reduce((a,b) => b.m < a.m ? b : a);
+  openPassport(
+    ppSection("Конфигурация", [
+      `SberCRM «Управление продажами», пользователей: <b>${u}</b>`,
+      `Оплата: <b>${year ? "за 12 месяцев (−30%)" : "помесячно"}</b>`,
+      `Минимальная цена: <b>${fmt(best.m)}/мес</b> — «${best.t.name}»`
+    ]) +
+    ppSection("Варианты", rows.map(({t,m,blocked}) =>
+      `${t.name}: ${blocked ? "недоступен при " + u + " пользователях" : fmt(m) + "/мес"} — ${t.note}`)) +
+    ppSection("Что проверить", [
+      "Тарифы — sbercrm.com/pricing <span class='tag src'>открытые данные</span>, упрощены для демо",
+      "Бесплатный тариф показан первым — он ничего не приносит банку, но может закрыть вашу задачу"
+    ]),
+    `ID ${Date.now().toString(36).toUpperCase()} · ${new Date().toLocaleDateString("ru-RU")} · правила v3.0 · режим: бизнес · SberCRM`
+  );
+};
+
+$("btnPassportRpa").onclick = () => {
+  const hrs = Number($("inRpaHours").value);
+  openPassport(
+    ppSection("Расчёт", [
+      `ГигаАРПА — роботизация процесса: <b>от ${fmt(550000)}</b> <span class="tag src">материалы продукта</span>`,
+      `Рутинных операций: ${hrs} ч/мес → высвобождение ≈ ${fmt(hrs*800*12)}/год <span class="tag est">оценка при 800 ₽/час</span>`,
+      `Ориентир окупаемости: <b>${(550000/(hrs*800)).toFixed(1).replace(".",",")} мес</b>`
+    ]) +
+    ppSection("Реальный кейс", [
+      "«Бакалея»: сверка банковских выписок — 794 000 ₽, 25 рабочих дней",
+      "Эффект: до 0,5 ПШЭ высвобождено, скорость ×25, ошибки → до 0 <span class='tag src'>презентация продукта</span>"
+    ]) +
+    ppSection("Что проверить", [
+      "Точная цена зависит от процесса — фиксируется после аудита <span class='tag unk'>неизвестно до аудита</span>",
+      "Стоимость часа рутины у вашего бизнеса — подставьте свою, вывод может измениться"
+    ]),
+    `ID ${Date.now().toString(36).toUpperCase()} · ${new Date().toLocaleDateString("ru-RU")} · правила v3.0 · режим: бизнес · ГигаАРПА`
+  );
+};
+
+/* ============================================================
+   МАРШРУТИЗАТОР РЕЧИ — AI извлекает параметры, правила считают
+   ============================================================ */
+function routeIntent(text){
+  const t = text.toLowerCase();
+  if (ROLE === "person") return personIntent(t);
+  if (ROLE === "business") return businessIntent(t);
+  return kmIntent(t);
+}
+
+function personIntent(t){
+  let acted = false, notes = [];
+  if (/не знаю|что это|объясни|расскажи|какой кредит|что за кредит/.test(t)){
+    $("btnExplain").click(); return;
+  }
+  const groups = parseRuNumbers(t);
+  const amount = groups.filter(g => g.value >= 50000).sort((a,b)=>b.value-a.value)[0];
+  if (amount && /(млн|миллион|тыс|тысяч|\d{5,}|нужн|нужно|хочу|взять|кредит|сумм)/.test(t)){
+    $("inAmount").value = clamp(Math.round(amount.value/50000)*50000, 100000, 5000000);
+    notes.push(`сумма — ${fmt(amount.value)}`); acted = true;
+  }
+  const y = parseYears(t);
+  if (y){
+    $("inTerm").value = clamp(Math.round(y*12/6)*6, 12, 60);
+    notes.push(`срок — ${$("inTerm").value} мес.`); acted = true;
+  } else {
+    const months = t.match(/(\d+)\s*мес/);
+    if (months){ $("inTerm").value = clamp(Math.round(Number(months[1])/6)*6, 12, 60);
+      notes.push(`срок — ${$("inTerm").value} мес.`); acted = true; }
+  }
+  if (/зарплат|пенси/.test(t) && !/не получаю|нет/.test(t)){
+    $("inSalary").checked = true; notes.push("учла скидку зарплатного клиента −2 п.п."); acted = true;
+  }
+  if (/(убери|без|не нужн|откаж|отключи|выключи)[^а-я]*(страхов|страховк)/.test(t) || (/страхов/.test(t) && /убер|не нужн|без|нет|выключ/.test(t))){
+    $("inIns").checked = false; notes.push("страховку убрала — пересчитала"); acted = true;
+  }
+  if (/страхов/.test(t) && /верни|включи|добав|нужна|оставь/.test(t)){
+    $("inIns").checked = true; notes.push("страховку вернула"); acted = true;
+  }
+  if (/смс|sms/.test(t) && /убер|не нужн|без|нет|выключ|отключи/.test(t)){
+    $("inSms").checked = false; notes.push("SMS выключила"); acted = true;
+  }
+  if (/ничего|минимум|только кредит/.test(t)){ $("inNothing").checked = true;
+    notes.push("оставила только кредит, без опций"); acted = true; }
+  $("inNothing").checked = $("inNothing").checked && !/верни|включи|добав/.test(t);
+  if ($("inNothing").checked && ($("inIns").checked || $("inSms").checked) && /верни|включи/.test(t))
+    $("inNothing").checked = false;
+  syncOpts(); renderCredit();
+  if (acted){
+    const c = creditState();
+    aiSay(`Поняла: ${notes.join("; ")}.<br>Ставка <b>${c.rate.toFixed(1).replace(".",",")}%</b>, платёж по кредиту <b>${fmt(c.pay)}</b>, итого со всеми опциями — <b>${fmt(c.totalMonth)}/мес</b>. Всё, что не нужно, убирается кнопкой «убрать» в таблице — цена пересчитается сразу.`);
+  } else {
+    aiSay("Расскажите голосом: какая сумма нужна и на какой срок. Например: «нужны полтора миллиона на три года, я зарплатный клиент». А если что-то в цене не нужно — скажите «убери страховку», и я пересчитаю.");
+  }
+}
+
+function businessIntent(t){
+  let acted = false, notes = [];
+
+  /* --- сначала выбираем продукт по ключевым словам --- */
+  const groups0 = parseRuNumbers(t);
+  const numAfter = (re) => {
+    const m = t.match(re);
+    if (m){ const v = Number(m[1]); if (!isNaN(v)) return v; }
+    return null;
+  };
+  const wordNum = () => groups0.length ? groups0[groups0.length-1].value : null;
+
+  if (/коворк|cowork|ии.ассистент|нейросет|gigacowork/.test(t)){
+    setProd("cowork");
+    if (/локал|сво[её]м контур|onprem/.test(t)){ CW_VER="onprem"; document.querySelectorAll("#coworkSeg button").forEach(x=>x.classList.toggle("active", x.dataset.v==="onprem")); notes.push("версия — локально"); acted = true; }
+    else if (/гибрид/.test(t)){ CW_VER="hybrid"; document.querySelectorAll("#coworkSeg button").forEach(x=>x.classList.toggle("active", x.dataset.v==="hybrid")); notes.push("версия — гибрид"); acted = true; }
+    else if (/облак/.test(t)){ CW_VER="cloud"; document.querySelectorAll("#coworkSeg button").forEach(x=>x.classList.toggle("active", x.dataset.v==="cloud")); notes.push("версия — облако"); acted = true; }
+    const u = numAfter(/(\d+)\s*(пользовател|сотрудн|человек|мест)/) || (/пользовател|сотрудн/.test(t) ? wordNum() : null);
+    if (u){ $("inCwUsers").value = clamp(Math.round(u/50)*50, 100, 1000); notes.push(`пользователей — ${$("inCwUsers").value}`); acted = true; }
+    renderCowork();
+    if (acted){
+      const c = coworkCalc();
+      aiSay(c.price === null
+        ? `Поняла: ${notes.join("; ")}. Локальная версия считается индивидуально после аудита — честно показываю «неизвестно» вместо выдуманной цифры. Облако для ориентира — рядом в переключателе.`
+        : `Поняла: ${notes.join("; ")}.<br><b>${fmt(c.price)}/год</b>, это <b>${fmt(c.price/c.users/12)}</b> за пользователя в месяц. Состав цены — ниже, с тегами «включено» и «оценка».`);
+      return;
+    }
+    aiSay("Показываю GigaCowork. Скажите версию — облако, гибрид или локально — и число пользователей, например: «коворк в облаке на триста пользователей».");
+    return;
+  }
+
+  if (/здоров|медицин|дмс|телемед|врач|полис|клиник/.test(t)){
+    setProd("health");
+    const n = numAfter(/(\d+)\s*(сотрудн|человек|работник)/) || (/сотрудн|человек|работник/.test(t) ? wordNum() : null);
+    if (n){ $("inHlStaff").value = clamp(Math.round(n), 3, 2000); notes.push(`сотрудников — ${$("inHlStaff").value}`); acted = true; }
+    if (/анализ|диагностик|мрт|обследован/.test(t)){ $("inHlAn").checked = true; notes.push("нужны анализы и диагностика"); acted = true; }
+    if (/безлимит|выезд|максимальн/.test(t)){ $("inHlUn").checked = true; notes.push("нужен безлимит клиник"); acted = true; }
+    renderHealth();
+    if (acted){
+      const nn = Number($("inHlStaff").value), tier = hlTier(nn);
+      const rec = $("inHlUn").checked ? "p" : $("inHlAn").checked ? "s" : "b";
+      const rt = HL_TARIFFS.find(x => x.key === rec);
+      aiSay(`Поняла: ${notes.join("; ")}.<br>Рекомендую «<b>${rt.name}</b>» — ${fmt(tier[rec]*nn)} в год за ${nn} сотрудников, это ${fmt(tier[rec]/12)} за человека в месяц. Все четыре тарифа — в таблице, видно, что добавляет каждый уровень.`);
+    } else aiSay("Показываю «Корпоративное здоровье+». Скажите, сколько сотрудников и что важно — анализы, безлимит клиник. Например: «медицина на сто двадцать сотрудников, нужны анализы».");
+    return;
+  }
+
+  if (/юрист|юридич|право|договор|контрагент|претензи/.test(t)){
+    setProd("legal");
+    const d = numAfter(/(\d+)\s*договор/) || (/договор/.test(t) ? wordNum() : null);
+    if (d){ $("inLgDocs").value = clamp(Math.round(d), 5, 40); notes.push(`договоров — ${$("inLgDocs").value} в год`); acted = true; }
+    renderLegal();
+    if (acted){
+      const rec = Number($("inLgDocs").value) <= 15 ? LG_PACKS[0] : LG_PACKS[1];
+      aiSay(`Поняла: ${notes.join("; ")}.<br>Под это подходит «<b>${rec.name}</b>» — ${fmt(rec.price)}/год, один договор выходит ${fmt(rec.price/rec.docs)}. Честная цена единицы услуги — в карточках справа.`);
+    } else aiSay("Показываю СберПраво. Скажите, сколько договоров нужно в год — например: «нам нужно около двадцати договоров в год» — и я покажу, какой пакет честно дешевле.");
+    return;
+  }
+
+  if (/crm|продаж|сделк|клиентск|лид/.test(t)){
+    setProd("crm");
+    const u = numAfter(/(\d+)\s*(пользовател|менеджер|человек|сотрудн)/) || (/пользовател|менеджер/.test(t) ? wordNum() : null);
+    if (u){ $("inCrmUsers").value = clamp(Math.round(u), 1, 60); notes.push(`пользователей — ${$("inCrmUsers").value}`); acted = true; }
+    renderCRM();
+    if (acted){
+      const uu = Number($("inCrmUsers").value), year = $("inCrmYear").checked;
+      const rows = CRM_TARIFFS.map(x => ({ x, m: Math.round(x.per*uu*(year?0.7:1)), blocked: x.per===0 && uu>5 }));
+      const best = rows.filter(r => !r.blocked).reduce((a,b) => b.m < a.m ? b : a);
+      aiSay(`Поняла: ${notes.join("; ")}.<br>Минимальная цена — <b>${fmt(best.m)}/мес</b> («${best.x.name}»). Бесплатный тариф показываю рядом честно: ${uu<=5?"вам его может хватить":"он закрыт при "+uu+" пользователях"}.`);
+    } else aiSay("Показываю SberCRM. Скажите, сколько человек будут работать — например: «нужна CRM на двенадцать менеджеров».");
+    return;
+  }
+
+  if (/рпа|робот|rpa|рутин/.test(t)){
+    setProd("rpa");
+    const hrs = numAfter(/(\d+)\s*час/) || (/час/.test(t) ? wordNum() : null);
+    if (hrs){ $("inRpaHours").value = clamp(Math.round(hrs/10)*10, 20, 500); notes.push(`рутины — ${$("inRpaHours").value} ч/мес`); acted = true; }
+    renderRPA();
+    if (acted){
+      const hh = Number($("inRpaHours").value);
+      aiSay(`Поняла: ${notes.join("; ")}.<br>Проект — <b>от 550 000 ₽</b>, высвобождение ≈ ${fmt(hh*800*12)} в год, ориентир окупаемости — <b>${(550000/(hh*800)).toFixed(1).replace(".",",")} мес</b>. Если окупаемость выходит долгой — я так и скажу.`);
+    } else aiSay("Показываю ГигаАРПА. Скажите, сколько часов рутины в месяц у процесса — например: «часов двести рутины» — посчитаю окупаемость до старта.");
+    return;
+  }
+
+  /* --- РКО (по умолчанию) --- */
+  if (/почему не бесплатн|объясни|разниц/.test(t)){ $("btnExplain2").click(); return; }
+  if (/рко|расч[её]тн|эквайр|платеж|сч[её]т/.test(t)) setProd("rko");
+  if (/\bип\b/.test(t)){ $("inIP").checked = true; notes.push("учла форму ИП"); acted = true; }
+  const payM = t.match(/(\d+)\s*(платеж|платёж|поручени)/) || t.match(/([а-яё\s]{2,30}?)\s*платеж/);
+  if (payM){
+    let p = Number(payM[1]);
+    if (isNaN(p)){ const a = parseRuNumbers(payM[1]); if (a.length) p = a[a.length-1].value; }
+    if (!isNaN(p)){ $("inPay").value = clamp(Math.round(p), 0, 100);
+      notes.push(`платежей — ${p}/мес`); acted = true; }
+  }
+  const groups = parseRuNumbers(t);
+  if (/физлиц|физик|людям|перевожу|перевод/.test(t)){
+    const fl = groups.filter(g => g.value >= 10000).sort((a,b)=>b.value-a.value)[0];
+    if (fl){ $("inFL").value = clamp(Math.round(fl.value/50000)*50000, 0, 2000000);
+      notes.push(`переводы физлицам — ${fmt(fl.value)}/мес`); acted = true; }
+  }
+  if (/наличн/.test(t)){
+    const ca = groups.filter(g => g.value >= 10000).sort((a,b)=>b.value-a.value)[0];
+    if (ca){ $("inCash").value = clamp(Math.round(ca.value/50000)*50000, 0, 1000000);
+      notes.push(`снятие наличных — ${fmt(ca.value)}/мес`); acted = true; }
+  }
+  renderRKO();
+  if (acted){
+    const s = rkoState();
+    const rows = RKO.filter(p => !p.ipOnly || s.ip).map(p => ({p, c: rkoCost(p, s.pay, s.fl, s.cash)}));
+    const best = rows.reduce((a,b) => b.c.total < a.c.total ? b : a);
+    aiSay(`Приняла: ${notes.join("; ")}.<br>При таком профиле дешевле всего <b>«${best.p.name}» — ${fmt(best.c.total)}/мес</b>. Расчёт по каждому пакету — в таблице справа, там видно, за что именно вы платите.`);
+  } else {
+    aiSay("Опишите месяц вашего бизнеса: «я ИП, 35 платежей в месяц, перевожу физлицам тысяч двести». Я подберу пакет по полной стоимости, а не по абонплате.");
+  }
+}
+
+function kmIntent(t){
+  if (/встреч|запис|анализ|покажи/.test(t)){ $("btnAnalyze").click(); return; }
+  if (/предложен|сформир|письмо|кп/.test(t)){
+    if ($("kmOffer").innerHTML){ aiSay("Черновик уже справа — проверьте его перед отправкой. Система не отправляет предложения клиенту сама: финальное слово за менеджером."); }
+    else { aiSay("Сначала анализирую запись встречи."); $("btnAnalyze").click(); }
+    return;
+  }
+  aiSay("Режим менеджера: нажмите «Анализировать запись встречи» — соберу профиль клиента и подготовлю черновик предложения. Демо работает на реальной расшифровке встречи с агрокомпанией от 26 августа.");
+}
+
+/* ---------- переключение ролей ---------- */
+document.querySelectorAll(".role-btn").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".role-btn").forEach(x => x.classList.remove("active"));
+  b.classList.add("active");
+  ROLE = b.dataset.role;
+  ["person","business","km"].forEach(r => $("panel-"+r).classList.toggle("hidden", r !== ROLE));
+  $("messages").innerHTML = "";
+  renderExamples(ROLE);
+  if (ROLE === "person")
+    aiSay("Здравствуйте! Скажите голосом, что вам нужно — например: «нужны полтора миллиона на три года». Я не буду навязывать: покажу, из чего состоит цена, и вы сами решите, что оставить. Можно начать с кнопки «Объясните, что это за продукт».");
+  else if (ROLE === "business")
+    aiSay("Здравствуйте! Один стандарт честной цены — на все продукты: РКО, GigaCowork, СберЗдоровье, СберПраво, SberCRM, ГигаАРПА. Выберите продукт кнопкой или голосом — например: «я ИП, 35 платежей в месяц» или «медицина на сто двадцать сотрудников».");
+  else
+    aiSay("Режим клиентского менеджера. Нажмите «Анализировать запись встречи» — по окончании диалога получите профиль клиента и черновик точечного предложения.");
+});
+
+/* ---------- init ---------- */
+renderExamples("person");
+syncOpts(); renderCredit(); renderRKO(); renderCowork(); renderHealth(); renderLegal(); renderCRM(); renderRPA();
+
+// deep-link: #business, #km, #prod-health — для QR и демо
+(function(){
+  const hh = location.hash.replace("#","");
+  if (hh.startsWith("prod-") && PROD_NAMES[hh.slice(5)]){
+    document.querySelector('[data-role="business"]').click();
+    setProd(hh.slice(5));
+  } else if (["person","business","km"].includes(hh)){
+    document.querySelector(`[data-role="${hh}"]`).click();
+  }
+})();
+addMsg("ai","Здравствуйте! Скажите голосом, что вам нужно — например: «нужны полтора миллиона на три года». Покажу, из чего состоит цена, и что из неё можно убрать.");
+</script>
+</body>
+</html>
