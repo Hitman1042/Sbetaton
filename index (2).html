@@ -232,8 +232,62 @@ input[type=range]{width:100%;accent-color:var(--green);height:28px}
 .seg button{background:#fff;border:1px solid var(--line);border-radius:999px;
   padding:7px 14px;font-weight:700;font-size:13px;color:var(--muted)}
 .seg button.active{background:var(--green);color:#fff;border-color:var(--green)}
+
+/* ---------- MOBILE / TABLET: чат-шторка + FAB ---------- */
+.chat-fab{display:none}
+.chat-close{display:none}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(16px);
+  background:#0F1114;color:#fff;padding:11px 18px;border-radius:12px;font-size:13.5px;
+  font-weight:600;box-shadow:0 12px 32px rgba(0,0,0,.25);opacity:0;pointer-events:none;
+  transition:.25s ease;z-index:400;max-width:92vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@keyframes fabPulse{0%,100%{box-shadow:0 10px 26px rgba(33,160,56,.4),0 0 0 0 rgba(33,160,56,.45)}
+  60%{box-shadow:0 10px 26px rgba(33,160,56,.4),0 0 0 16px rgba(33,160,56,0)}}
+@keyframes fabNudge{0%,100%{transform:translateY(0)}25%{transform:translateY(-8px)}
+  55%{transform:translateY(0)}75%{transform:translateY(-4px)}}
+
+@media(max-width:980px){
+  /* контент в одну колонку, без липкой шапки */
+  .topbar{position:static;padding:10px 12px;gap:10px}
+  .team-logo{height:42px}
+  .brand{font-size:14px}
+  .roles{padding:12px 12px 0;gap:6px}
+  .role-btn{padding:8px 13px;font-size:13px}
+  .container{width:100%;padding:0 12px}
+  .workspace{padding:14px 0 100px}   /* запас под FAB */
+  .panel{padding:18px 16px}
+  .panel h2{font-size:19px}
+  .kpi .v{font-size:18px}
+  .actions .btn{flex:1;text-align:center}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
+  .table-wrap .rko-table{min-width:600px}
+
+  /* чат — нижняя шторка */
+  .chat{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:320;
+    display:flex;flex-direction:column;max-height:78vh;
+    border:0;border-radius:20px 20px 0 0;
+    box-shadow:0 -14px 44px rgba(16,24,40,.28);
+    transform:translateY(105%);transition:transform .3s ease}
+  .chat.open{transform:translateY(0)}
+  .chat-messages{height:auto;flex:1;min-height:110px}
+  .chat-close{display:grid;margin-left:2px;width:30px;height:30px;border-radius:50%;
+    border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);
+    color:#fff;font-size:14px;place-items:center;line-height:1;flex:none}
+
+  /* плавающая кнопка с пульсацией */
+  .chat-fab{display:grid;place-items:center;position:fixed;right:16px;bottom:18px;
+    width:60px;height:60px;border-radius:50%;border:0;z-index:310;
+    background:var(--green);color:#fff;font-size:26px;
+    box-shadow:0 10px 26px rgba(33,160,56,.4);
+    animation:fabPulse 2.4s ease-out infinite}
+  .chat-fab.nudge{animation:fabPulse 2.4s ease-out infinite,fabNudge .55s ease}
+  .chat-fab.hide{display:none}
+  .fab-badge{position:absolute;top:-4px;right:-4px;min-width:22px;height:22px;
+    border-radius:999px;background:#E5484D;color:#fff;font-size:12px;font-weight:800;
+    display:grid;place-items:center;padding:0 6px;border:2px solid #fff}
+  .fab-badge.hide{display:none}
+}
 </style>
-<base target="_blank">
 </head>
 <body>
 
@@ -261,10 +315,11 @@ input[type=range]{width:100%;accent-color:var(--green);height:28px}
 <div class="workspace">
 
   <!-- CHAT -->
-  <div class="chat">
+  <div class="chat" id="chatBox">
     <div class="chat-header"><span class="dot"></span>
       <span id="chatTitle">Голосовой помощник</span>
       <span class="voice-state" id="voiceState"></span>
+      <button class="chat-close" id="chatClose" title="Свернуть чат">✕</button>
     </div>
     <div class="chat-messages" id="messages"></div>
     <div class="chat-input-wrap">
@@ -275,6 +330,8 @@ input[type=range]{width:100%;accent-color:var(--green);height:28px}
     </div>
     <div class="chat-examples" id="examples"></div>
   </div>
+  <button class="chat-fab" id="chatFab" title="Голосовой помощник">💬<span class="fab-badge hide" id="fabBadge">1</span></button>
+  <div class="toast" id="toast"></div>
 
   <!-- PERSON: CREDIT CONSTRUCTOR -->
   <div class="panel" id="panel-person">
@@ -373,7 +430,7 @@ input[type=range]{width:100%;accent-color:var(--green);height:28px}
       <input type="range" id="inCash" min="0" max="1000000" step="50000" value="0">
     </div>
 
-    <table class="rko-table" id="rkoTable"></table>
+    <div class="table-wrap"><table class="rko-table" id="rkoTable"></table></div>
     <div class="verdict good" id="rkoVerdict"></div>
 
     <div class="actions">
@@ -435,7 +492,7 @@ input[type=range]{width:100%;accent-color:var(--green);height:28px}
       </label>
     </div>
 
-    <table class="rko-table" id="hlTable"></table>
+    <div class="table-wrap"><table class="rko-table" id="hlTable"></table></div>
     <div class="verdict good" id="hlVerdict"></div>
 
     <div class="actions">
@@ -482,7 +539,7 @@ input[type=range]{width:100%;accent-color:var(--green);height:28px}
       </label>
     </div>
 
-    <table class="rko-table" id="crmTable"></table>
+    <div class="table-wrap"><table class="rko-table" id="crmTable"></table></div>
     <div class="verdict good" id="crmVerdict"></div>
 
     <div class="actions">
@@ -741,6 +798,67 @@ function renderExamples(role){
     .map(x => `<button onclick="useExample(this)">${x}</button>`).join("");
 }
 function useExample(btn){ $("chatInput").value = btn.textContent; sendMessage(); }
+
+/* ---------- мобильная шторка чата + FAB ---------- */
+const mqMobile = window.matchMedia("(max-width: 980px)");
+let chatOpen = false, unread = 0;
+function setFabBadge(){
+  const b = $("fabBadge");
+  if (unread > 0 && !chatOpen){ b.textContent = unread > 9 ? "9+" : unread; b.classList.remove("hide"); }
+  else b.classList.add("hide");
+}
+function fabNudge(){
+  const f = $("chatFab");
+  f.classList.remove("nudge"); void f.offsetWidth; f.classList.add("nudge");
+}
+function openChat(){
+  chatOpen = true; unread = 0;
+  $("chatBox").classList.add("open");
+  $("chatFab").classList.add("hide");
+  setFabBadge();
+  setTimeout(() => { $("messages").scrollTop = $("messages").scrollHeight; }, 320);
+}
+function closeChat(){
+  chatOpen = false;
+  $("chatBox").classList.remove("open");
+  if (mqMobile.matches) $("chatFab").classList.remove("hide");
+  setFabBadge();
+}
+$("chatFab").onclick = () => { chatOpen ? closeChat() : openChat(); };
+$("chatClose").onclick = closeChat;
+if (mqMobile.addEventListener){
+  mqMobile.addEventListener("change", e => {
+    if (!e.matches){ $("chatFab").classList.add("hide"); $("chatBox").classList.remove("open"); chatOpen = false; unread = 0; }
+    else if (!chatOpen){ $("chatFab").classList.remove("hide"); }
+  });
+}
+let toastTimer = null;
+function showToast(text, ms){
+  const t = $("toast");
+  t.textContent = text;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), ms || 2600);
+}
+/* обёртки: на мобильном считаем непрочитанные и подсвечиваем FAB */
+const addMsgCore = addMsg;
+addMsg = function(type, html){
+  addMsgCore(type, html);
+  if (!mqMobile.matches) return;
+  if (type === "user"){ if (!chatOpen) openChat(); return; }
+  if (!chatOpen){
+    unread++; setFabBadge(); fabNudge();
+    if (type === "ai") showToast("Ответ готов — откройте чат 💬");
+  }
+};
+const aiSayCore = aiSay;
+aiSay = function(html, spoken){
+  aiSayCore(html, spoken);
+  if (mqMobile.matches && !chatOpen){
+    unread++; setFabBadge(); fabNudge();
+    showToast("Ответ готов — откройте чат 💬");
+  }
+};
 
 $("sendBtn").onclick = sendMessage;
 $("chatInput").addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
@@ -1653,8 +1771,13 @@ syncOpts(); renderCredit(); renderRKO(); renderCowork(); renderHealth(); renderL
   } else if (["person","business","km"].includes(hh)){
     document.querySelector(`[data-role="${hh}"]`).click();
   }
+  if (hh.includes("chat")) setTimeout(openChat, 150);
 })();
-addMsg("ai","Здравствуйте! Скажите голосом, что вам нужно — например: «нужны полтора миллиона на три года». Покажу, из чего состоит цена, и что из неё можно убрать.");
+addMsgCore("ai","Здравствуйте! Скажите голосом, что вам нужно — например: «нужны полтора миллиона на три года». Покажу, из чего состоит цена, и что из неё можно убрать.");
+if (mqMobile.matches){
+  unread = 1; setFabBadge();
+  setTimeout(() => showToast("Чат с голосовым помощником — зелёная кнопка внизу справа 💬", 4500), 900);
+}
 </script>
 </body>
 </html>
