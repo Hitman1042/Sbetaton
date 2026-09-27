@@ -301,7 +301,7 @@ input[type=range]{width:100%;accent-color:var(--green);height:28px}
   </div>
   <div class="badges">
     <span class="demo-label">Сбератон 2026 · Демо</span>
-    <span class="demo-label">РКО — открытые данные 27.09.2026 · Здоровье/Право — презентации ККСБ 2026 · CRM — sbercrm.com · Кредит — иллюстративная модель</span>
+    <span class="demo-label">РКО — тарифы «Бизнес Прайм» от 01.09.2026 · Здоровье/Право — презентации ККСБ 2026 · CRM — sbercrm.com · Кредит — иллюстративная модель</span>
   </div>
 </div>
 
@@ -407,26 +407,31 @@ input[type=range]{width:100%;accent-color:var(--green);height:28px}
 
     <!-- РКО -->
     <div class="prod" id="prod-rko">
-    <h2 style="font-size:18px">РКО — какой пакет дешевле при ваших операциях</h2>
-    <p class="sub">Нулевая абонплата — не значит нулевые расходы. Двигайте ползунки под свой месяц — увидите цену каждого пакета и порог, где выгоднее другой. Тарифы: открытые данные СберБизнеса на 27.09.2026, упрощены для демо.</p>
+    <h2 style="font-size:18px">РКО — подписка «Бизнес Прайм»: цена собирается из кубиков</h2>
+    <p class="sub">Старые пакеты («Лёгкий старт», «Набирая обороты», «Полным ходом») переведены в архив — подключить их больше нельзя. Теперь РКО — конструктор лимитов: двигайте ползунки под свой месяц и видьте цену каждого кубика. Тарифы от 01.09.2026, sberbank.ru, упрощены для демо.</p>
 
-    <div class="toggles" style="grid-template-columns:1fr">
+    <div class="toggles">
       <label class="opt" id="optIP">
         <input type="checkbox" id="inIP">
         <div><div class="t">Я — индивидуальный предприниматель</div>
-        <div class="d">Открывает пакет «Только для ИП»</div></div>
+        <div class="d">Переводы физлицам для ИП: до 500 тыс ₽/мес за 0 ₽</div></div>
+      </label>
+      <label class="opt on" id="optFlow">
+        <input type="checkbox" id="inFlow" checked>
+        <div><div class="t">Поступления на счёт ≥ 50 000 ₽/мес</div>
+        <div class="d">Тогда база подписки — 0 ₽ вместо 490 ₽</div></div>
       </label>
     </div>
     <div class="ctl">
-      <label>Платежей юрлицам/ИП в другие банки, в месяц <output id="oPay">30</output></label>
-      <input type="range" id="inPay" min="0" max="100" step="1" value="30">
+      <label>Платежей юрлицам/ИП, в месяц <output id="oPay">35</output></label>
+      <input type="range" id="inPay" min="0" max="100" step="1" value="35">
     </div>
     <div class="ctl">
       <label>Переводы физлицам, ₽ в месяц <output id="oFL">200 000 ₽</output></label>
       <input type="range" id="inFL" min="0" max="2000000" step="50000" value="200000">
     </div>
     <div class="ctl">
-      <label>Снятие наличных с бизнес-карты, ₽ в месяц <output id="oCash">0 ₽</output></label>
+      <label>Внесение наличных на счёт, ₽ в месяц <output id="oCash">0 ₽</output></label>
       <input type="range" id="inCash" min="0" max="1000000" step="50000" value="0">
     </div>
 
@@ -435,9 +440,9 @@ input[type=range]{width:100%;accent-color:var(--green);height:28px}
 
     <div class="actions">
       <button class="btn" id="btnPassport2">📄 Паспорт цены</button>
-      <button class="btn ghost" id="btnExplain2">❓ Объясните разницу пакетов</button>
+      <button class="btn ghost" id="btnExplain2">❓ Как устроен «Бизнес Прайм»</button>
     </div>
-    <div class="footnote">Учтены: абонплата, платежи юрлицам/ИП в другие банки, переводы физлицам, снятие наличных с бизнес-карты. Не учтены: валютные операции, внесение наличных, акции и региональные особенности — полный расчёт делает менеджер по официальному тарифному справочнику.</div>
+    <div class="footnote">Учтены: база подписки, платежи юрлицам/ИП, переводы физлицам, внесение наличных. Не учтены: эквайринг, валютные операции, снятие наличных — полный расчёт делает менеджер. Промежуточные градации лимитов — по открытым источникам; точную цену показывает калькулятор СберБизнеса.</div>
     </div>
 
     <!-- GigaCowork -->
@@ -651,7 +656,11 @@ const NUM_WORDS = {
 // Возвращает массив числовых групп из текста: [{value, idx}]
 // "полтора миллиона на три года" -> [{value:1500000}, {value:3}]
 function parseRuNumbers(text){
-  const t = text.toLowerCase();
+  // разговорный порядок «тысяч двести» = 200 000 → приводим к «двести тысяч»
+  const NW = "(?:двести|триста|четыреста|пятьсот|шестьсот|семьсот|восемьсот|девятьсот|сто|двадцать|тридцать|сорок|пятьдесят|шестьдесят|семьдесят|восемьдесят|девяносто)";
+  const t = text.toLowerCase().replace(
+    new RegExp("тысяч[аи]?\\s+(" + NW + "(?:\\s+" + NW + ")?)", "g"),
+    "$1 тысяч");
   const out = [];
   // 1) цифры с множителем: 1 500 000 / 2,5 млн / 300 тыс
   const reD = /(\d[\d\s]*(?:[.,]\d+)?)\s*(млн|миллион[аов]*|тыс\.?|тысяч[аи]?)/g;
@@ -978,37 +987,49 @@ function syncOpts(){
 
 
 /* ============================================================
-   РКО — реальные пакеты СберБизнеса (открытые данные, 27.09.2026)
-   Упрощённая демонстрационная модель: абонплата + платежи ЮЛ/ИП
-   в другие банки + переводы физлицам + снятие наличных по карте.
+   РКО — подписка «Бизнес Прайм»: конструктор лимитов.
+   Источник: тарифы от 01.09.2026 (sberbank.ru). Пакеты «Лёгкий
+   старт», «Набирая обороты», «Полным ходом», «Только для ИП»
+   переведены банком в архив — подключение недоступно.
+   Промежуточные градации цен — по открытым источникам,
+   упрощено для демо.
    ============================================================ */
-const RKO = [
-  { name:"Лёгкий старт", fee:0, freePay:5, payFee:199,
-    flFree:300000, flPct:0.017, cashFree:300000, cashPct:0.02, cashMin:400,
-    ipOnly:false,
-    note:"0 ₽ обслуживания, но всего 5 бесплатных платежей" },
-  { name:"Только для ИП", fee:590, freePay:6, payFee:100,
-    flFree:500000, flPct:0.017, cashFree:100000, cashPct:0.02, cashMin:400,
-    ipOnly:true,
-    note:"Дешёвая абонплата для ИП без большого оборота платежей" },
-  { name:"Набирая обороты", fee:1290, freePay:20, payFee:100,
-    flFree:300000, flPct:0.017, cashFree:300000, cashPct:0.02, cashMin:400,
-    ipOnly:false,
-    note:"20 бесплатных платежей — для растущего бизнеса" },
-  { name:"Полным ходом", fee:3990, freePay:50, payFee:100,
-    flFree:600000, flPct:0.005, cashFree:300000, cashPct:0.02, cashMin:400,
-    ipOnly:false,
-    note:"50 бесплатных платежей и расширенные лимиты на физлиц" }
-];
-function rkoCost(pkg, pay, fl, cash){
-  const payments = pkg.fee + Math.max(0, pay - pkg.freePay) * pkg.payFee;
-  const flCost = Math.max(0, fl - pkg.flFree) * pkg.flPct;
-  const cashOver = Math.max(0, cash - pkg.cashFree);
-  const cashCost = cashOver > 0 ? Math.max(pkg.cashMin, cashOver * pkg.cashPct) : 0;
-  return { total: payments + flCost + cashCost, payments, flCost, cashCost };
+const PRIME = {
+  base: 490,                       // 0 ₽ при поступлениях ≥ 50 000 ₽/мес
+  pay:  [ {n:5,p:0}, {n:25,p:990}, {n:50,p:1590}, {n:150,p:2990}, {n:200,p:4090} ],
+  payOver: 129,                    // сверх лимита в другие банки; внутри Сбера — 0 ₽
+  flIP: [ {n:500000,p:0}, {n:750000,p:990}, {n:1000000,p:3190}, {n:1500000,p:8100} ],
+  flUL: [ {n:300000,p:0}, {n:750000,p:2990}, {n:1000000,p:5990}, {n:1500000,p:10500} ],
+  flOver: 0.035,                   // сверх лимита в другие банки; внутри Сбера — 2,5%
+  cash: [ {n:50000,p:0}, {n:250000,p:390}, {n:500000,p:790}, {n:1000000,p:1900} ]
+};
+function pickLimit(limits, need, overCost){
+  // лимит с минимальной полной стоимостью: цена лимита + плата сверх него
+  return limits.map(l => ({ l, over: Math.max(0, need - l.n),
+    total: l.p + Math.max(0, need - l.n) * overCost }))
+    .reduce((a,b) => b.total < a.total ? b : a);
+}
+function primeCost(s){
+  const base = s.flow ? 0 : PRIME.base;
+  const pay  = pickLimit(PRIME.pay, s.pay, PRIME.payOver);
+  const fl   = pickLimit(s.ip ? PRIME.flIP : PRIME.flUL, s.fl, PRIME.flOver);
+  const cash = pickLimit(PRIME.cash, s.cash, 0);
+  const mods = [pay, fl, cash];
+  const paid = mods.filter(m => m.l.p > 0);
+  const sum  = base + mods.reduce((a,m) => a + m.total, 0);
+  // скидка до 15% при 2+ платных лимитах (формула из тарифов, упрощённо)
+  let disc = 0;
+  if (paid.length >= 2){
+    const pMax = PRIME.pay[PRIME.pay.length-1].p +
+      (s.ip ? PRIME.flIP : PRIME.flUL)[3].p + PRIME.cash[PRIME.cash.length-1].p;
+    const pSum = paid.reduce((a,m) => a + m.l.p, 0);
+    disc = Math.round(sum * (pSum/pMax) * 0.15 * (paid.length/3) / 10) * 10;
+  }
+  return { base, pay, fl, cash, disc, total: sum - disc };
 }
 function rkoState(){
   return { ip: $("inIP").checked,
+           flow: $("inFlow").checked,
            pay: Number($("inPay").value),
            fl: Number($("inFL").value),
            cash: Number($("inCash").value) };
@@ -1019,45 +1040,38 @@ function renderRKO(){
   $("oFL").textContent = fmt(s.fl);
   $("oCash").textContent = fmt(s.cash);
   $("optIP").classList.toggle("on", s.ip);
+  $("optFlow").classList.toggle("on", s.flow);
 
-  const rows = RKO.filter(p => !p.ipOnly || s.ip).map(p => ({p, c: rkoCost(p, s.pay, s.fl, s.cash)}));
-  const best = rows.reduce((a,b) => b.c.total < a.c.total ? b : a);
+  const c = primeCost(s);
+  const limTxt = (n, unit) => n >= 10000 ? "до " + fmt(n) : n + " " + unit;
   $("rkoTable").innerHTML =
-    `<tr><th>Пакет</th><th>Абонплата</th><th>Платежи ЮЛ/ИП</th><th>Переводы физлицам</th><th>Наличные</th><th>Итого/мес</th></tr>` +
-    rows.map(({p,c}) => `<tr class="${p===best.p?"best":""}">
-      <td>${p.name}${p.ipOnly?' <span class="tag src">ИП</span>':""}</td>
-      <td>${fmt(p.fee)}</td><td>${fmt(c.payments - p.fee)}</td>
-      <td>${fmt(c.flCost)}</td><td>${fmt(c.cashCost)}</td>
-      <td class="${p===best.p?"min":""}">${fmt(c.total)}</td></tr>`).join("");
+    `<tr><th>Кубик подписки</th><th>Ваш объём</th><th>Лимит</th><th>Цена лимита</th><th>Сверх лимита</th><th>Итого/мес</th></tr>` +
+    `<tr><td>База: счёт и сервисы</td><td>${s.flow ? "поступления ≥ 50 тыс" : "поступления < 50 тыс"}</td><td>—</td><td>${c.base ? fmt(c.base) : "0 ₽"}</td><td>—</td><td>${fmt(c.base)}</td></tr>` +
+    `<tr><td>Платежи ЮЛ/ИП</td><td>${s.pay} шт</td><td>${c.pay.l.n} шт</td><td>${c.pay.l.p ? fmt(c.pay.l.p) : "0 ₽"}</td><td>${c.pay.over ? c.pay.over + " × 129 ₽" : "—"}</td><td>${fmt(c.pay.total)}</td></tr>` +
+    `<tr><td>Переводы физлицам</td><td>${fmt(s.fl)}</td><td>${limTxt(c.fl.l.n, "₽")}</td><td>${c.fl.l.p ? fmt(c.fl.l.p) : "0 ₽"}</td><td>${c.fl.over ? fmt(c.fl.over) + " × 3,5%" : "—"}</td><td>${fmt(c.fl.total)}</td></tr>` +
+    `<tr><td>Внесение наличных</td><td>${fmt(s.cash)}</td><td>${limTxt(c.cash.l.n, "₽")}</td><td>${c.cash.l.p ? fmt(c.cash.l.p) : "0 ₽"}</td><td>—</td><td>${fmt(c.cash.total)}</td></tr>` +
+    (c.disc ? `<tr><td colspan="5">Скидка за 2+ платных лимита (до 15%)</td><td>−${fmt(c.disc)}</td></tr>` : "") +
+    `<tr class="best"><td><b>Ваша подписка</b></td><td colspan="4"></td><td class="min"><b>${fmt(c.total)}</b></td></tr>`;
 
-  // объяснение и порог смены
+  // объяснение и пороги
   const lines = [];
-  lines.push(`Рекомендуем <b>«${best.p.name}»</b>: ${fmt(best.c.total)} в месяц при вашем профиле.`);
-  const cheapest0 = rows.find(r => r.p.fee === 0);
-  if (cheapest0 && best.p.fee > 0){
-    lines.push(`Бесплатный «Лёгкий старт» обошёлся бы в ${fmt(cheapest0.c.total)} — на ${fmt(cheapest0.c.total - best.c.total)} дороже: нулевая абонплата не значит нулевые расходы.`);
-  }
-  // порог: при каком числе платежей меняется рекомендация (по текущим fl/cash)
-  const bestAt = (n) => RKO.filter(p => !p.ipOnly || s.ip)
-    .map(p => ({p, c: rkoCost(p, n, s.fl, s.cash)}))
-    .reduce((a,b) => b.c.total < a.c.total ? b : a);
+  lines.push(`Ваша сборка: база ${c.base ? fmt(c.base) : "<b>0 ₽</b>"} + платежи ${c.pay.l.n} шт за ${c.pay.l.p ? fmt(c.pay.l.p) : "<b>0 ₽</b>"} + физлицам ${limTxt(c.fl.l.n,"₽")} за ${c.fl.l.p ? fmt(c.fl.l.p) : "<b>0 ₽</b>"} + наличные ${limTxt(c.cash.l.n,"₽")} за ${c.cash.l.p ? fmt(c.cash.l.p) : "<b>0 ₽</b>"} = <b>${fmt(c.total)}/мес</b>.`);
+  if (c.disc) lines.push(`Скидка ${fmt(c.disc)} за выбор 2+ платных лимитов уже учтена (до 15% по формуле тарифа).`);
+  // порог по платежам при тех же fl/cash
+  const costAt = (n) => primeCost({ ip:s.ip, flow:s.flow, pay:n, fl:s.fl, cash:s.cash }).total;
   let downAt = null, upAt = null;
-  for (let n = s.pay - 1; n >= 0; n--){
-    const r = bestAt(n);
-    if (r.p !== best.p && r.c.total < best.c.total){ downAt = {n, name: r.p.name}; break; }
-  }
-  for (let n = s.pay + 1; n <= 150; n++){
-    const r = bestAt(n);
-    if (r.p !== best.p && r.c.total < best.c.total){ upAt = {n, name: r.p.name}; break; }
-  }
-  if (downAt) lines.push(`Если платежей станет ${downAt.n} или меньше в месяц — выгоднее «${downAt.name}». Мы предупредим, а не поменяем тариф без вас.`);
-  if (upAt) lines.push(`Если платежей станет ${upAt.n}+ в месяц — выгоднее «${upAt.name}». Мы предупредим, а не поменяем тариф без вас.`);
+  for (let n = s.pay - 1; n >= 0; n--){ const t = costAt(n); if (t < c.total){ downAt = {n, t}; break; } }
+  for (let n = s.pay + 1; n <= 100; n++){ const t = costAt(n); if (t > c.total){ upAt = {n, t}; break; } }
+  if (downAt) lines.push(`Если платежей станет ${downAt.n} или меньше — подписка подешевеет до ${fmt(downAt.t)}: мы предупредим, а не поменяем лимит без вас.`);
+  if (upAt) lines.push(`Если платежей станет ${upAt.n}+ — цена вырастет до ${fmt(upAt.t)}: покажем заранее, а не в выписке.`);
+  if (c.pay.total > 0) lines.push(`Если все контрагенты в Сбере — платежи сверх лимита бесплатны: хватит 5 шт за 0 ₽, экономия ${fmt(c.pay.total)} в месяц.`);
+  lines.push(`Первый месяц — 0 ₽ для новых клиентов.`);
   const v = $("rkoVerdict");
   v.className = "verdict good";
   v.innerHTML = lines.map(l => `• ${l}`).join("<br>") +
-    `<small>Что не учтено в демо: валютные операции, внесение наличных, акции, регион. Перед подключением — сверка с официальным тарифным справочником.</small>`;
+    `<small>Что не учтено в демо: эквайринг, валюта, снятие наличных, регион. Промежуточные градации — по открытым источникам; перед подключением — сверка с калькулятором СберБизнеса.</small>`;
 }
-["inPay","inFL","inCash","inIP"].forEach(id =>
+["inPay","inFL","inCash","inIP","inFlow"].forEach(id =>
   $(id).addEventListener("input", renderRKO));
 
 /* ============================================================
@@ -1388,31 +1402,32 @@ $("btnPassport").onclick = () => {
 
 $("btnPassport2").onclick = () => {
   const s = rkoState();
-  const rows = RKO.filter(p => !p.ipOnly || s.ip).map(p => ({p, c: rkoCost(p, s.pay, s.fl, s.cash)}));
-  const best = rows.reduce((a,b) => b.c.total < a.c.total ? b : a);
+  const c = primeCost(s);
   openPassport(
     ppSection("Профиль операций", [
-      `Платежей ЮЛ/ИП: <b>${s.pay}/мес</b> · физлицам: <b>${fmt(s.fl)}/мес</b> · наличные: <b>${fmt(s.cash)}/мес</b>`,
-      `Форма: <b>${s.ip ? "ИП" : "ООО/прочие"}</b>`
+      `Платежей ЮЛ/ИП: <b>${s.pay}/мес</b> · физлицам: <b>${fmt(s.fl)}/мес</b> · внесение наличных: <b>${fmt(s.cash)}/мес</b>`,
+      `Форма: <b>${s.ip ? "ИП" : "ООО/прочие"}</b> · поступления на счёт: <b>${s.flow ? "≥ 50 000 ₽/мес" : "< 50 000 ₽/мес"}</b>`
     ]) +
     ppSection("Рекомендация", [
-      `Пакет <b>«${best.p.name}»</b> — <b>${fmt(best.c.total)}/мес</b> при вашем профиле`,
-      `Почему: минимальная полная стоимость среди допустимых пакетов, а не минимальная абонплата`,
-      best.p.note
+      `Подписка <b>«Бизнес Прайм»</b> — <b>${fmt(c.total)}/мес</b> при вашем профиле`,
+      `Почему: каждый лимит подобран по минимальной полной стоимости — с учётом платы сверх лимита, а не по «красивой» базе`,
+      `Первый месяц для новых клиентов — 0 ₽`
     ]) +
     ppSection("Из чего состоит цена", [
-      `Абонплата: ${fmt(best.p.fee)} · платежи сверх лимита: ${fmt(best.c.payments - best.p.fee)}`,
-      `Переводы физлицам сверх лимита: ${fmt(best.c.flCost)} · наличные: ${fmt(best.c.cashCost)}`
+      `База (счёт и сервисы): ${fmt(c.base)} · платежи ${c.pay.l.n} шт: ${fmt(c.pay.total)}`,
+      `Физлицам до ${fmt(c.fl.l.n)}: ${fmt(c.fl.total)} · наличные до ${fmt(c.cash.l.n)}: ${fmt(c.cash.total)}` +
+      (c.disc ? ` · скидка за 2+ лимита: −${fmt(c.disc)}` : "")
     ]) +
     ppSection("Что не входит и что проверить", [
-      "Учтены 4 составляющие из большего тарифного справочника <span class='tag est'>частичный расчёт</span>",
-      "Не учтены: валюта, внесение наличных, акции, регион <span class='tag unk'>неизвестно</span>",
-      "Тарифы: открытые данные СберБизнеса на 27.09.2026 <span class='tag src'>sberbank.ru</span> — перед подключением сверка с менеджером",
+      "Учтены 4 кубика подписки из полного тарифного справочника <span class='tag est'>частичный расчёт</span>",
+      "Не учтены: эквайринг, валюта, снятие наличных, регион <span class='tag unk'>неизвестно</span>",
+      "Промежуточные градации лимитов — по открытым источникам <span class='tag est'>оценка</span>",
+      "Тарифы «Бизнес Прайм» от 01.09.2026 <span class='tag src'>sberbank.ru</span> — перед подключением сверка с калькулятором СберБизнеса",
       "Сравнение с другими банками не выполнялось — вывод «конкурентно рынку» из этого расчёта не следует"
     ]) +
     ppSection("После подключения", [
       "Раз в месяц прогноз сверяется с фактическими списаниями",
-      "Если профиль операций изменится — банк предложит пересмотр пакета, но не поменяет его без вашего согласия"
+      "Если профиль операций изменится — банк предложит пересмотр лимитов, но не поменяет их без вашего согласия"
     ]),
     `ID ${Date.now().toString(36).toUpperCase()} · ${new Date().toLocaleDateString("ru-RU")} · правила v3.0 · режим: бизнес`
   );
@@ -1424,8 +1439,8 @@ $("btnExplain").onclick = () => aiSay(
   "Кредит наличными — деньги на любые цели без залога. Цена состоит из кредита и добровольных опций. Всё, что не нужно, можно убрать — и сумма пересчитается сразу."
 );
 $("btnExplain2").onclick = () => aiSay(
-  "Разница пакетов — не «хороший или плохой», а под разный профиль. «Лёгкий старт» — 0 ₽, но только 5 бесплатных платежей: при 30 платежах он станет дороже платного пакета. «Набирая обороты» — 20 платежей включены. «Полным ходом» — 50. Смотрите на итог в месяц при своём профиле, а не на абонплату.",
-  "Разница пакетов — под разный профиль операций. Смотрите на итог в месяц, а не на абонплату."
+  "«Бизнес Прайм» — это конструктор: вы платите только за те лимиты, которые выбрали. <b>База</b> — 490 ₽ или 0 ₽ при поступлениях от 50 тысяч в месяц. <b>Платежи</b>: 5 штук бесплатно, дальше лимиты 25, 50, 150 штук — от 990 до 2 990 ₽; сверх лимита внутри Сбера — 0 ₽, в другие банки — 129 ₽. <b>Переводы физлицам</b> для ИП до 500 тысяч — 0 ₽. Два и больше платных лимитов дают скидку до 15%. Старые пакеты «Лёгкий старт» и «Набирая обороты» — в архиве, подключить их больше нельзя. Смотрите на итог в месяц при своём профиле — конструктор сам покажет, какой лимит дешевле.",
+  "Бизнес Прайм — конструктор: платите только за выбранные лимиты. База — ноль при поступлениях от 50 тысяч. Сверх лимита внутри Сбера платежи бесплатны."
 );
 
 /* ---------- объяснения и паспорта новых продуктов ---------- */
@@ -1702,13 +1717,19 @@ function businessIntent(t){
   /* --- РКО (по умолчанию) --- */
   if (/почему не бесплатн|объясни|разниц/.test(t)){ $("btnExplain2").click(); return; }
   if (/рко|расч[её]тн|эквайр|платеж|сч[её]т/.test(t)) setProd("rko");
-  if (/\bип\b/.test(t)){ $("inIP").checked = true; notes.push("учла форму ИП"); acted = true; }
-  const payM = t.match(/(\d+)\s*(платеж|платёж|поручени)/) || t.match(/([а-яё\s]{2,30}?)\s*платеж/);
-  if (payM){
+  if (/(^|[^а-яё])ип([^а-яё]|$)/.test(t)){ $("inIP").checked = true; notes.push("учла форму ИП"); acted = true; }
+  const payPats = [
+    /(\d+)\s*(платеж|платёж|поручени)/,
+    /платеж[а-яё]*\s+(?:станет|будет|вырастет\s+до|поднимется\s+до|до)\s*([а-яё\d]{2,20}(?:\s+[а-яё\d]{2,20})?)/,
+    /([а-яё\s]{2,30}?)\s*платеж/
+  ];
+  for (const pat of payPats){
+    const payM = t.match(pat);
+    if (!payM) continue;
     let p = Number(payM[1]);
     if (isNaN(p)){ const a = parseRuNumbers(payM[1]); if (a.length) p = a[a.length-1].value; }
     if (!isNaN(p)){ $("inPay").value = clamp(Math.round(p), 0, 100);
-      notes.push(`платежей — ${p}/мес`); acted = true; }
+      notes.push(`платежей — ${p}/мес`); acted = true; break; }
   }
   const groups = parseRuNumbers(t);
   if (/физлиц|физик|людям|перевожу|перевод/.test(t)){
@@ -1724,11 +1745,10 @@ function businessIntent(t){
   renderRKO();
   if (acted){
     const s = rkoState();
-    const rows = RKO.filter(p => !p.ipOnly || s.ip).map(p => ({p, c: rkoCost(p, s.pay, s.fl, s.cash)}));
-    const best = rows.reduce((a,b) => b.c.total < a.c.total ? b : a);
-    aiSay(`Приняла: ${notes.join("; ")}.<br>При таком профиле дешевле всего <b>«${best.p.name}» — ${fmt(best.c.total)}/мес</b>. Расчёт по каждому пакету — в таблице справа, там видно, за что именно вы платите.`);
+    const c = primeCost(s);
+    aiSay(`Приняла: ${notes.join("; ")}.<br>Собрала подписку <b>«Бизнес Прайм» — ${fmt(c.total)}/мес</b>: база ${c.base ? fmt(c.base) : "0 ₽"}, платежи ${c.pay.l.n} шт — ${c.pay.l.p ? fmt(c.pay.l.p) : "0 ₽"}, физлицам до ${fmt(c.fl.l.n)} — ${c.fl.l.p ? fmt(c.fl.l.p) : "0 ₽"}. Каждый кубик виден в таблице: что не нужно — убираем, цена пересчитается сразу.`);
   } else {
-    aiSay("Опишите месяц вашего бизнеса: «я ИП, 35 платежей в месяц, перевожу физлицам тысяч двести». Я подберу пакет по полной стоимости, а не по абонплате.");
+    aiSay("Опишите месяц вашего бизнеса: «я ИП, 35 платежей в месяц, перевожу физлицам тысяч двести». Я соберу подписку «Бизнес Прайм» по полной стоимости — кубик за кубиком.");
   }
 }
 
