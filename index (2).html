@@ -186,6 +186,17 @@ input[type=range]{width:100%;accent-color:var(--green);height:28px}
 /* GigaCowork rich block */
 .cw-params{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;align-items:end;margin:16px 0 4px}
 @media(max-width:760px){.cw-params{grid-template-columns:1fr}}
+.cw-quick{display:flex;gap:6px;align-items:center;margin-top:6px;font-size:11px;color:var(--muted)}
+.cw-quick button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--ink)}
+.cw-quick button:hover{border-color:var(--green);color:var(--green)}
+.cw-users-row{display:flex;gap:10px;align-items:center}
+.cw-users-row input[type=range]{flex:1}
+.cw-users-row input[type=number]{width:84px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:13px}
+.cw-custom{margin:14px 0;border:1px dashed var(--green);border-radius:var(--radius-sm);background:#F4FBF6;padding:12px 14px;font-size:13px}
+.cw-custom .row{display:flex;justify-content:space-between;gap:10px;padding:4px 0}
+.cw-custom .row b{white-space:nowrap}
+.cw-custom button{margin-top:8px;border:0;background:var(--green);color:#fff;border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer}
+.cw-custom button:hover{opacity:.9}
 .cw-company{display:flex;flex-direction:column;gap:6px}
 .cw-company label{font-size:13.5px;font-weight:600}
 .cw-company input{border:1px solid var(--line);border-radius:10px;padding:9px 12px;
@@ -507,8 +518,12 @@ input[type=range]{width:100%;accent-color:var(--green);height:28px}
 
     <div class="cw-params">
       <div class="ctl" style="margin:0">
-        <label>Пользователей <output id="oCwUsers">300</output></label>
-        <input type="range" id="inCwUsers" min="1" max="3000" step="1" value="300">
+        <label>Пользователей <output id="oCwUsers">200</output></label>
+        <div class="cw-users-row">
+          <input type="range" id="inCwUsers" min="10" max="3000" step="10" value="200">
+          <input type="number" id="inCwUsersN" min="1" max="3000" step="1" value="200" title="Точное число — для индивидуального расчёта">
+        </div>
+        <div class="cw-quick" id="cwQuick">Быстро: <button type="button" data-n="30">30</button><button type="button" data-n="100">100</button><button type="button" data-n="200">200</button><button type="button" data-n="400">400</button><button type="button" data-n="1250">1 250</button></div>
       </div>
       <div class="cw-company">
         <label for="inCwCompany">Компания</label>
@@ -528,6 +543,14 @@ input[type=range]{width:100%;accent-color:var(--green);height:28px}
 
     <div class="breakdown" id="cwBreak"></div>
     <div class="verdict good" id="cwVerdict"></div>
+
+    <!-- Индивидуальный расчёт: появляется только при нестандартном запросе (<30 пользователей) -->
+    <div class="cw-custom hidden" id="cwCustom"></div>
+
+    <details class="cw-cmp" id="cwDemandBox">
+      <summary>Статистика спроса для ДЗО и клиентских менеджеров <span class="tag est">собирается с прототипа</span></summary>
+      <div class="inner" id="cwDemand"></div>
+    </details>
 
     <div class="cw-scn-title">Сетка версий — вся, без скрытых ступеней</div>
     <div class="table-wrap"><table class="rko-table" id="cwTierTable"></table></div>
@@ -671,7 +694,7 @@ input[type=range]{width:100%;accent-color:var(--green);height:28px}
         <div id="kmOffer"></div>
       </div>
     </div>
-    <div class="footnote">Цены GigaCowork — вводные продукта (облако: XS — 3,05 млн ₽/год до 200 пользователей, S — 6,1 млн до 400; итоговая стоимость — на дату запроса КП). Черновик предложения всегда проверяет менеджер — система не отправляет его клиенту сама.</div>
+    <div class="footnote">Цены GigaCowork — вводные продукта: базовая ставка облака 12 500 ₽ за пользователя в год без НДС (XS = 12 500 × 200 = 2 500 000 + НДС 22% = 3,05 млн ₽/год; S — 6,1 млн до 400); продажи — от 30 пользователей (пока не анонсировано официально), младших версий для малого бизнеса пока нет — это честное «не знаем», а не обещание; итоговая стоимость — на дату запроса КП. Черновик предложения всегда проверяет менеджер — система не отправляет его клиенту сама.</div>
   </div>
 
 </div>
@@ -861,7 +884,7 @@ const EXAMPLES = {
   biz: {
     rko: ["Я ИП, 35 платежей в месяц и перевожу физлицам тысяч двести",
           "А если платежей станет шестьдесят?", "Почему не бесплатный тариф?"],
-    cowork: ["Нам нужен коворк в облаке на триста пользователей",
+    cowork: ["Нам нужен коворк в облаке на двести пользователей",
              "А если две тысячи человек и данные только в контуре?",
              "Отдайте агентам юристов, маркетинг и клиентский сервис",
              "Чем GigaCowork отличается от других платформ?"],
@@ -1167,6 +1190,8 @@ document.querySelectorAll(".prod-tab").forEach(b =>
 
 /* ---------- GigaCowork ---------- */
 // сетка версий — вводные продукта; итоговая стоимость фиксируется на дату запроса КП
+// базовая ставка облака: 12 500 ₽ за пользователя в год без НДС (≈1 042 ₽/мес); цены версий — с НДС 22%
+const CW_VAT = 1.22, CW_SEAT = 12500;
 const CW_TIERS = [
   { id:"xs",  name:"XS · Облако",   deploy:"cloud",  max:200,      price:3050000 },
   { id:"s",   name:"S · Облако",    deploy:"cloud",  max:400,      price:6100000 },
@@ -1174,6 +1199,8 @@ const CW_TIERS = [
   { id:"l",   name:"L · Гибрид",    deploy:"hybrid", max:2500,     price:30500000 },
   { id:"pak", name:"ПАК · в контуре клиента", deploy:"pak", max:Infinity, price:81700000, from:true }
 ];
+// прейскурант без НДС, для открытой строки в составе цены
+const CW_NET = { xs:2500000, s:5000000, m:15000000, l:25000000 };
 // сценарии ИИ-агентов: роль человека vs роль агента + мультипликатор (ориентиры из практики внедрений)
 const CW_SCENARIOS = [
   { id:"marketing", icon:"📣", name:"Маркетинг", human:"поставщик гипотез", agent:"исполнитель кампаний",
@@ -1209,6 +1236,8 @@ const CW_CMP = [
   ["Данные в РФ",                                2,2,2,2,2]
 ];
 let CW_VER = "cloud";
+let CW_MULTI = false; // «только облако» при переполнении сетки: несколько пространств S
+const CW_MIN_SALE = 30; // продажи неофициально от 30 пользователей; младших версий пока нет — честное «не знаем»
 const CW_SEL = new Set(["legal"]);
 
 function cwTierFor(users, deploy){
@@ -1218,12 +1247,19 @@ function cwTierFor(users, deploy){
 function cwSuggested(users){ // честная рекомендация, если выбранное размещение не вмещает людей
   return CW_TIERS.find(t => !t.from && users <= t.max) || CW_TIERS[CW_TIERS.length-1];
 }
+function cwCloudMulti(users){ // «только облако» сверх лимита S: несколько пространств S по 400 мест
+  const spaces = Math.ceil(users / 400);
+  return { spaces, capacity: spaces * 400, net: spaces * CW_NET.s, price: spaces * 6100000 };
+}
 function coworkCalc(){
-  const users = Math.max(1, Math.round(Number($("inCwUsers").value) || 1));
-  const tier = cwTierFor(users, CW_VER);
-  const sug = tier ? null : cwSuggested(users);
-  const eff = tier || sug;
-  return { users, tier, sug, eff, price: eff.price, from: !!eff.from,
+  const users = Math.max(1, Math.round(Number($("inCwUsersN").value) || Number($("inCwUsers").value) || 1));
+  const multi = (CW_VER === "cloud" && users > 400 && CW_MULTI) ? cwCloudMulti(users) : null;
+  const tier = multi ? null : cwTierFor(users, CW_VER);
+  const sug = (!tier && !multi) ? cwSuggested(users) : null;
+  const eff = multi
+    ? { id:"multi", name:`Облако · ${multi.spaces} пространств${multi.spaces < 5 ? "а" : ""} S`, deploy:"cloud", max: multi.capacity, price: multi.price, from:false }
+    : (tier || sug);
+  return { users, tier, sug, eff, multi, price: eff.price, from: !!eff.from,
            scn: CW_SCENARIOS.filter(s => CW_SEL.has(s.id)) };
 }
 function cwSyncSeg(){
@@ -1231,7 +1267,8 @@ function cwSyncSeg(){
     x.classList.toggle("active", x.dataset.v === CW_VER));
 }
 document.querySelectorAll("#coworkSeg button").forEach(b =>
-  b.onclick = () => { CW_VER = b.dataset.v; cwSyncSeg(); renderCowork(); });
+  b.onclick = () => { CW_VER = b.dataset.v; CW_MULTI = false; cwSyncSeg(); renderCowork(); });
+window.cwSetMulti = v => { CW_MULTI = v; renderCowork(); };
 
 function renderCowork(){
   const c = coworkCalc();
@@ -1251,14 +1288,30 @@ function renderCowork(){
   // состав цены
   const inc = (t,d) => `<div class="row"><div class="name">${t} <span class="tag src">включено</span><small>${d}</small></div><div class="sum">0 ₽ сверх версии</div></div>`;
   let br;
-  if (c.from){
+  if (c.multi){
+    const m = c.multi;
+    br = `<div class="row"><div class="name">Только облако: ${m.spaces} пространств${m.spaces < 5 ? "а" : ""} S <span class="tag src">честный компромисс</span><small>одно пространство вмещает до 400 пользователей: 400 × ${m.spaces} = ${m.capacity.toLocaleString("ru-RU")} мест при ваших ${c.users.toLocaleString("ru-RU")}</small></div><div class="sum">${m.spaces} × S</div></div>
+       <div class="row"><div class="name">Лицензии без НДС <small>на пространство: 12 500 ₽ × 400 = 5 000 000 ₽/год — та же открытая ставка</small></div><div class="sum">${m.spaces} × 5 000 000 = ${fmt(m.net)}</div></div>
+       <div class="row"><div class="name">НДС 22% <small>налог показан отдельной строкой — не прячем в цене</small></div><div class="sum">+ ${fmt(m.price - m.net)}</div></div>
+       <div class="row"><div class="name"><b>Итого, с НДС</b></div><div class="sum"><b>${fmt(m.price)}/год</b></div></div>
+       <div class="row"><div class="name">Что честно теряется без гибрида <small>единое пространство и общий контекст агентов между командами есть только в гибриде и ПАК</small></div><div class="sum">сказано прямо</div></div>`
+       + inc("Безлимит токенов","в каждом пространстве")
+       + inc("До 200 часов консультаций по ГенИИ","на всю компанию")
+       + inc("Обучение в СберУниверситете","удалённо, для команды клиента")
+       + inc("API-токены для интеграций","по запросу");
+  } else if (c.from){
     br = `<div class="row"><div class="name">ПАК — программно-аппаратный комплекс <span class="tag unk">смета после аудита</span><small>модели и данные полностью в контуре клиента; возможна кастомная конфигурация</small></div><div class="sum">от ${fmt(c.price)}</div></div>`
        + inc("Безлимит токенов","платите за комплекс, а не за каждый вопрос сотрудника")
        + inc("До 200 часов консультаций по ГенИИ","помогаем запустить сценарии агентов")
        + inc("Обучение в СберУниверситете","удалённо, для команды клиента")
        + inc("API-токены для интеграций","по запросу");
   } else {
-    br = `<div class="row"><div class="name">${c.eff.name} — платформа, обновления, поддержка <span class="tag src">вводные продукта</span><small>лимит версии — до ${c.eff.max.toLocaleString("ru-RU")} пользователей</small></div><div class="sum">${fmt(c.price)}/год</div></div>
+    const net = CW_NET[c.eff.id], vat = c.price - net;
+    const full = CW_SEAT * c.eff.max, disc = full - net; // скидка за объём на старших версиях — показываем открыто
+    br = `<div class="row"><div class="name">Базовая ставка облака <span class="tag src">вводные продукта</span><small>${fmt(CW_SEAT)} за пользователя в год без НДС (≈1 042 ₽/мес) — формула открыта</small></div><div class="sum">${fmt(CW_SEAT)}</div></div>
+       <div class="row"><div class="name">${c.eff.name} — платформа, обновления, поддержка <small>лимит версии — до ${c.eff.max.toLocaleString("ru-RU")} пользователей: ${fmt(CW_SEAT)} × ${c.eff.max} = ${fmt(full)}${disc > 0 ? " − скидка за объём " + fmt(disc) : ""}</small></div><div class="sum">${fmt(net)}/год без НДС</div></div>
+       <div class="row"><div class="name">НДС 22% <small>налог показан отдельной строкой — не прячем в цене</small></div><div class="sum">+ ${fmt(vat)}</div></div>
+       <div class="row"><div class="name"><b>Итого ${c.eff.name}, с НДС</b></div><div class="sum"><b>${fmt(c.price)}/год</b></div></div>
        <div class="row"><div class="name">Пользователи: ${c.users.toLocaleString("ru-RU")} <small>место = цена версии ÷ ваши люди ÷ 12 месяцев — формула открыта</small></div><div class="sum">${fmt(c.price/c.users/12)}/польз/мес</div></div>`
        + inc("Безлимит токенов","платите за версию, а не за каждый вопрос сотрудника")
        + inc("До 200 часов консультаций по ГенИИ","помогаем запустить сценарии агентов")
@@ -1281,22 +1334,90 @@ function renderCowork(){
   const scnTxt = c.scn.length
     ? "Агентам отдано сценариев: <b>" + c.scn.length + "</b> — " + c.scn.map(s => `${s.name} (${s.mult} ${s.multLabel})`).join(", ") + ". Мультипликаторы — ориентиры из практики внедрений, ваши цифры проверяются пилотом."
     : "Сценарии для агентов не выбраны — отметьте карточки выше, и покажем, где ждать кратного роста.";
-  if (c.sug){
+  if (c.multi){
+    const m = c.multi, alt = cwSuggested(c.users);
+    const cmp = m.price <= alt.price
+      ? `${alt.name} — ${alt.from ? "от " : ""}${fmt(alt.price)}/год: дороже в абсолюте, зато единое пространство и общий контекст агентов`
+      : `${alt.name} — ${alt.from ? "от " : ""}${fmt(alt.price)}/год: дешевле и единое пространство — мы обязаны сказать это прямо`;
+    $("cwVerdict").className = "verdict good";
+    $("cwVerdict").innerHTML =
+      `Вы выбрали «только облако» при ${c.users.toLocaleString("ru-RU")} пользователях: одно пространство вмещает до 400, поэтому честный вариант — <b>${m.spaces} пространств${m.spaces < 5 ? "а" : ""} S за ${fmt(m.price)}/год</b> (место — ${fmt(m.price/c.users/12)}/мес). Альтернатива: ${cmp}. Обе цифры на экране — выбор за вами. <a href="#" onclick="cwSetMulti(false);return false" style="color:var(--green)">Показать ${alt.name.split(" · ")[0]} →</a> <small>${scnTxt}</small>`;
+  } else if (c.sug){
+    const stayCloud = CW_VER === "cloud"
+      ? ` Или останьтесь на облаке: посчитаем честный вариант из нескольких пространств — <a href="#" onclick="cwSetMulti(true);return false" style="color:var(--green)">показать</a>.`
+      : "";
     $("cwVerdict").className = "verdict warn";
     $("cwVerdict").innerHTML = c.sug.from
-      ? `При ${c.users.toLocaleString("ru-RU")} пользователях версии с фиксированной ценой уже не хватает — честный ответ: <b>ПАК, от ${fmt(c.sug.price)}</b>, смета после аудита. Переключите размещение на «ПАК» — покажем состав поставки.`
-      : `Выбранное размещение «${{cloud:"Облако",hybrid:"Гибрид"}[CW_VER]}» вмещает не больше ${CW_TIERS.filter(t=>t.deploy===CW_VER).pop().max.toLocaleString("ru-RU")} пользователей. Для ${c.users.toLocaleString("ru-RU")} подходит <b>${c.sug.name}</b> — ${fmt(c.sug.price)}/год. Нажмите «${c.sug.deploy === "hybrid" ? "Гибрид" : "ПАК"}» выше — цена пересчитается сразу.`;
+      ? `При ${c.users.toLocaleString("ru-RU")} пользователях версии с фиксированной ценой уже не хватает — честный ответ: <b>ПАК, от ${fmt(c.sug.price)}</b>, смета после аудита. Переключите размещение на «ПАК» — покажем состав поставки.${stayCloud}`
+      : `Выбранное размещение «${{cloud:"Облако",hybrid:"Гибрид"}[CW_VER]}» вмещает не больше ${CW_TIERS.filter(t=>t.deploy===CW_VER).pop().max.toLocaleString("ru-RU")} пользователей. Для ${c.users.toLocaleString("ru-RU")} подходит <b>${c.sug.name}</b> — ${fmt(c.sug.price)}/год. Нажмите «${c.sug.deploy === "hybrid" ? "Гибрид" : "ПАК"}» выше — цена пересчитается сразу.${stayCloud}`;
   } else if (c.from){
     $("cwVerdict").className = "verdict";
     $("cwVerdict").innerHTML = `ПАК считается индивидуально — мы не рисуем точную цифру до аудита: ориентир <b>от ${fmt(c.price)}</b>, возможна кастомная конфигурация. Неизвестное честно помечено неизвестным. <small>${scnTxt}</small>`;
   } else {
+    // честная подсказка вниз: если чуть-чуть не влезли в младшую версию — скажем прямо
+    const grp = CW_TIERS.filter(t => t.deploy === CW_VER && !t.from);
+    const idx = grp.findIndex(t => t.id === c.eff.id);
+    const prev = idx > 0 ? grp[idx-1] : null;
+    const downHint = (prev && c.users > prev.max && c.users - prev.max <= 100)
+      ? ` <b>Честная подсказка:</b> если подключите не больше ${prev.max.toLocaleString("ru-RU")} пользователей — хватит версии ${prev.name} за ${fmt(prev.price)}/год.`
+      : "";
+    const reason = prev
+      ? ` Рекомендуем ${c.eff.name}, потому что ${prev.name.split(" · ")[0]} вмещает только ${prev.max.toLocaleString("ru-RU")}, а вы выбрали ${c.users.toLocaleString("ru-RU")} — у новой версии запас до ${c.eff.max.toLocaleString("ru-RU")} и место дешевле при заполнении (${fmt(c.eff.price/c.eff.max/12)}/мес).`
+      : "";
+    const minSale = c.users < CW_MIN_SALE
+      ? ` <b>Честно про порог:</b> продажи — от ${CW_MIN_SALE} пользователей (пока не анонсировано официально): цена XS для вашей команды та же — ${fmt(c.price)}/год, условия подтверждает менеджер. Версий для совсем небольших компаний пока нет — это честное «не знаем», а не скрытый тариф.`
+      : "";
     $("cwVerdict").className = "verdict good";
     $("cwVerdict").innerHTML =
-      `${$("inCwCompany").value || "Компания"}: ${c.users.toLocaleString("ru-RU")} пользователей → <b>${c.eff.name}</b> за <b>${fmt(c.price)}/год</b>, место — ${fmt(c.price/c.users/12)} в месяц. Следующая ступень сетки и её цена видны в таблице ниже — пороги открыты заранее. <small>${scnTxt}</small>`;
+      `${$("inCwCompany").value || "Компания"}: ${c.users.toLocaleString("ru-RU")} пользователей → <b>${c.eff.name}</b> за <b>${fmt(c.price)}/год</b>, место — ${fmt(c.price/c.users/12)} в месяц.${reason}${downHint} Следующая ступень сетки и её цена видны в таблице ниже — пороги открыты заранее.${minSale} <small>${scnTxt}</small>`;
   }
+  cwRenderCustom(c);
 }
-$("inCwUsers").addEventListener("input", renderCowork);
+function cwSyncUsers(from){
+  if (from === "range") $("inCwUsersN").value = $("inCwUsers").value;
+  else if (from === "num") $("inCwUsers").value = $("inCwUsersN").value;
+  else $("inCwUsersN").value = $("inCwUsers").value;
+}
+$("inCwUsers").addEventListener("input", () => { cwSyncUsers("range"); renderCowork(); });
+$("inCwUsersN").addEventListener("input", () => { cwSyncUsers("num"); renderCowork(); });
 $("inCwCompany").addEventListener("input", renderCowork);
+document.querySelectorAll("#cwQuick button").forEach(b =>
+  b.onclick = () => { $("inCwUsers").value = b.dataset.n; cwSyncUsers(); renderCowork(); });
+
+// --- индивидуальный расчёт + статистика спроса (нестандартные объёмы) ---
+function cwDemandLoad(){ try { return JSON.parse(localStorage.getItem("cw_demand") || "[]"); } catch(e){ return []; } }
+function cwDemandSave(a){ try { localStorage.setItem("cw_demand", JSON.stringify(a.slice(-50))); } catch(e){} }
+window.cwSendCustom = users => {
+  const a = cwDemandLoad();
+  a.push({ users, kind: users < CW_MIN_SALE ? "малый объём" : "нестандартный объём",
+           company: $("inCwCompany").value || "Компания", ts: new Date().toLocaleString("ru-RU") });
+  cwDemandSave(a);
+  renderCowork();
+};
+function cwRenderCustom(c){
+  const box = $("cwCustom");
+  if (c.users >= CW_MIN_SALE || c.from || c.multi){ box.classList.add("hidden"); box.innerHTML = ""; }
+  else {
+    const net = c.users * CW_SEAT, vat = Math.round(net * 0.22), total = net + vat;
+    box.classList.remove("hidden");
+    box.innerHTML =
+      `<b>Индивидуальный расчёт — по той же открытой ставке</b><br>` +
+      `<small>Стандартные версии начинаются от ${CW_MIN_SALE} пользователей, но ставка известна — считаем честно, не отказываем:</small>` +
+      `<div class="row" style="margin-top:6px"><span>Ставка × пользователи: 12 500 ₽ × ${c.users}</span><b>${fmt(net)}/год без НДС</b></div>` +
+      `<div class="row"><span>НДС 22%</span><b>+ ${fmt(vat)}</b></div>` +
+      `<div class="row"><span><b>Индивидуально, с НДС</b></span><b>${fmt(total)}/год</b></div>` +
+      `<small>Условия согласуются индивидуально через клиентского менеджера — стандартная XS за ${fmt(3050000)} тоже остаётся доступна.</small><br>` +
+      `<button onclick="cwSendCustom(${c.users})">Отправить запрос клиентскому менеджеру</button>`;
+  }
+  // статистика спроса для ДЗО и КМ
+  const a = cwDemandLoad();
+  $("cwDemand").innerHTML = a.length
+    ? `<div class="footnote" style="margin-bottom:6px">Нестандартные запросы, зафиксированные прототипом (анонимно по компаниям) — сигнал продуктовой команде ДЗО, какие поставки востребованы:</div>` +
+      `<div class="table-wrap"><table class="rko-table"><tr><th>Когда</th><th>Компания</th><th>Тип</th><th>Пользователей</th></tr>` +
+      a.slice().reverse().map(x => `<tr><td>${x.ts}</td><td>${x.company}</td><td>${x.kind}</td><td>${x.users}</td></tr>`).join("") +
+      `</table></div>`
+    : `<div class="footnote">Пока пусто: нестандартные запросы (меньше ${CW_MIN_SALE} пользователей, несколько пространств) появятся здесь после отправки менеджеру — так ДЗО увидит реальный спрос на новые версии поставки.</div>`;
+}
 
 // карточки сценариев
 $("cwScenarios").innerHTML = CW_SCENARIOS.map(s => `
@@ -1488,7 +1609,7 @@ const KM_LINES = [
   ["Менеджер","Покажу платформу: агенты, сценарии, статистика использования."],
   ["Клиент","Мы сельское хозяйство. Отчётность, работа агронома в поле — вот что интересно."],
   ["Клиент","Нам нужно понимать, что мы на себя можем переложить, а не чужие кейсы."],
-  ["Менеджер","Облако: версия XS — до 200 пользователей, 3 050 000 ₽ в год, токены безлимитно."],
+  ["Менеджер","Облако: версия XS — до 200 пользователей. Базовая ставка 12 500 ₽ за пользователя в год без НДС: 12 500 × 200 = 2 500 000, с НДС 22% выходит 3 050 000 ₽ в год, токены безлимитно."],
   ["Клиент","У нас таких пользователей минимум двести, а то и триста. Можно ли в рассрочку?"],
   ["Клиент","Руководитель автоматизации подключится позже, собственник первым делом спросит про деньги."],
   ["Менеджер","Готовы помочь с экономическим обоснованием для собственника."],
@@ -1646,7 +1767,7 @@ $("btnExplain2").onclick = () => aiSay(
 
 /* ---------- объяснения и паспорта новых продуктов ---------- */
 $("btnExplainCw").onclick = () => aiSay(
-  "GigaCowork — платформа, где компания собирает команду ИИ-агентов под свои процессы: маркетинг, продажи, сервис, бэк-офис, ИТ, юристы. Человек решает нестандартное — агент забирает типовое. <b>Сетка версий открыта вся:</b> XS и S — облако до 200 и 400 пользователей, M и L — гибрид до 1 250 и 2 500, ПАК — всё в вашем контуре без потолка, от 81,7 млн. В любую версию включены безлимит токенов, до 200 часов консультаций по ГенИИ и обучение в СберУниверситете. Итоговая стоимость — на дату запроса КП, а ПАК честно считается после аудита — мы не рисуем цифру, которую не можем подтвердить.",
+  "GigaCowork — платформа, где компания собирает команду ИИ-агентов под свои процессы: маркетинг, продажи, сервис, бэк-офис, ИТ, юристы. Человек решает нестандартное — агент забирает типовое. <b>Сетка версий открыта вся, вместе с формулой:</b> базовая ставка облака — 12 500 ₽ за пользователя в год без НДС, версия XS — 12 500 × 200 = 2,5 млн без НДС, плюс НДС 22% — итого 3,05 млн ₽ в год. XS и S — облако до 200 и 400 пользователей, M и L — гибрид до 1 250 и 2 500, ПАК — всё в вашем контуре без потолка, от 81,7 млн. В любую версию включены безлимит токенов, до 200 часов консультаций по ГенИИ и обучение в СберУниверситете. Итоговая стоимость — на дату запроса КП, а ПАК честно считается после аудита — мы не рисуем цифру, которую не можем подтвердить.",
   "Облако — до 400 пользователей, гибрид — до 2 500, ПАК — без потолка в вашем контуре. Токены безлимитны во всех версиях. Цена ПАК — после аудита, честно."
 );
 $("btnExplainHl").onclick = () => aiSay(
@@ -1855,7 +1976,7 @@ function businessIntent(t){
     else if (/гибрид/.test(t)){ CW_VER="hybrid"; cwSyncSeg(); notes.push("размещение — гибрид"); acted = true; }
     else if (/облак/.test(t)){ CW_VER="cloud"; cwSyncSeg(); notes.push("размещение — облако"); acted = true; }
     const u = numAfter(/(\d+)\s*(пользовател|сотрудн|человек|мест)/) || (/пользовател|сотрудн|человек/.test(t) ? wordNum() : null);
-    if (u){ $("inCwUsers").value = clamp(Math.round(u), 1, 3000); notes.push(`пользователей — ${Number($("inCwUsers").value).toLocaleString("ru-RU")}`); acted = true; }
+    if (u){ $("inCwUsersN").value = clamp(Math.round(u), 1, 3000); cwSyncUsers("num"); notes.push(`пользователей — ${Number($("inCwUsersN").value).toLocaleString("ru-RU")}`); acted = true; }
     // сценарии ИИ-агентов
     const scnHits = [];
     if (/маркетинг|продвиж|кампани|контент|лид(?!ер)/.test(t)) scnHits.push("marketing");
@@ -1888,7 +2009,7 @@ function businessIntent(t){
       }
       return;
     }
-    aiSay("Показываю GigaCowork. Скажите размещение — облако, гибрид или ПАК — число пользователей и какие процессы отдать агентам. Например: «коворк в облаке на триста пользователей, юристы и маркетинг».");
+    aiSay("Показываю GigaCowork. Скажите размещение — облако, гибрид или ПАК — число пользователей и какие процессы отдать агентам. Например: «коворк в облаке на двести пользователей, юристы и маркетинг».");
     return;
   }
 
@@ -2029,7 +2150,7 @@ syncOpts(); renderCredit(); renderRKO(); renderCowork(); renderHealth(); renderL
   }
   if (hh.includes("chat")) setTimeout(openChat, 150);
 })();
-addMsgCore("ai","Здравствуйте! Это «Честная цена» для бизнеса. Начните с якорного сценария: скажите «коворк в облаке на триста пользователей» — и увидите, из чего собирается цена. Рядом — РКО, СберЗдоровье, СберПраво, SberCRM и ГигаАРПА, а для частных клиентов — конструктор кредита (кнопки ролей выше).");
+addMsgCore("ai","Здравствуйте! Это «Честная цена» для бизнеса. Начните с якорного сценария: скажите «коворк в облаке на двести пользователей» — и увидите, из чего собирается цена. Рядом — РКО, СберЗдоровье, СберПраво, SberCRM и ГигаАРПА, а для частных клиентов — конструктор кредита (кнопки ролей выше).");
 if (mqMobile.matches){
   unread = 1; setFabBadge();
   setTimeout(() => showToast("Чат с голосовым помощником — зелёная кнопка внизу справа 💬", 4500), 900);
